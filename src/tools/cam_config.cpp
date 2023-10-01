@@ -6,39 +6,56 @@
 
 #include <strmif.h>
 
-#include <exception>
 #include <iostream>
 #include <string>
+#include <exception>
+#include <cstdio>
 
+int parse_args(int argc, char* argv[]);
+
+void cmd_get(int idx);
+void cmd_set(int idx, std::string filename);
+
+void print_property(CComPtr<IAMCameraControl> cc, std::string name, tagCameraControlProperty prop);
 tagCameraControlProperty str_to_camConProp(std::string prop_name);
 
 int main(int argc, char* argv[])
 {
-    if(argc != 3)
-    {
-        std::cout << "Usage:\n\tset_current_cam_config <device_index> <file>\n";
-        return 1;
-    }
-
-    std::string idx_raw {argv[1]};
-    if(!system_u::str_tools::is_integer(idx_raw))
-    {
-        std::cout << "ERROR: index must be an integer\n";
-        return 2;
-    }
-
-    auto idx = std::atoi(argv[1]);
-    std::string filename {argv[2]};
-
     camcon::initialize();
 
+    parse_args(argc, argv);
+
+    camcon::finalize();
+
+    return 0;
+}
+
+void cmd_get(int idx)
+{
     camcon::VideoDeviceEnumerator vde{};
 
-    if(idx < 0 || idx >= vde.count())
-    {
-        std::cout << "ERROR: index out of bounds\n";
-        return 3;
-    }
+    auto devSrc {vde.getDevice(idx)};
+
+    CComPtr<IAMCameraControl> devSrcControl { nullptr };
+    devSrc->QueryInterface(IID_PPV_ARGS(&devSrcControl));
+
+    long lvalue{-1};
+    long flags{-1};
+
+    devSrcControl->Get(CameraControl_Pan, &lvalue, &flags);
+
+    print_property(devSrcControl, "pan", CameraControl_Pan);
+    print_property(devSrcControl, "tilt", CameraControl_Tilt);
+    print_property(devSrcControl, "roll", CameraControl_Roll);
+    print_property(devSrcControl, "zoom", CameraControl_Zoom);
+    print_property(devSrcControl, "exposure", CameraControl_Exposure);
+    print_property(devSrcControl, "iris", CameraControl_Iris);
+    print_property(devSrcControl, "focus", CameraControl_Focus);
+}
+
+void cmd_set(int idx, std::string filename)
+{
+    camcon::VideoDeviceEnumerator vde{};
 
     auto devSrc {vde.getDevice(idx)};
 
@@ -48,15 +65,12 @@ int main(int argc, char* argv[])
     auto lines = system_u::read_file_lines(filename);
     for(auto l : lines)
     {
-        try {
+        try
+        {
             auto tokens = system_u::str_tools::split(l, ',');
-            devSrcControl->Set(str_to_camConProp(tokens.at(0)), std::stoi(tokens.at(1)), std::stoi(tokens.at(2)));
+            devSrcControl->Set(str_to_camConProp(tokens[0]), std::stoi(tokens[1]), std::stoi(tokens[2]));
         } catch(std::exception e) {}
     }
-
-    camcon::finalize();
-
-    return 0;
 }
 
 void print_property(CComPtr<IAMCameraControl> cc, std::string name, tagCameraControlProperty prop)

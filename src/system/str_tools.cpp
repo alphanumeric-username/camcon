@@ -28,4 +28,31 @@ std::vector<std::string> split(std::string s, char sep)
     return split_s;
 }
 
+bool is_integer(std::string s)
+{
+    for(int i {0}; i < s.length(); i++)
+    {
+        auto c {s[i]};
+
+        bool is_num = c == '0' || c == '1' || c == '2' || c == '3' || 
+                      c == '4' || c == '5' || c == '6' || c == '7' || 
+                      c == '8' || c == '9';
+        
+        if(is_num) 
+        {
+            continue;
+        } else if(c == '-')
+        {
+            if(i == 0) {
+                continue;
+            }
+            return false;
+        } else {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 }

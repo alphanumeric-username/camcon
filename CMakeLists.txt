@@ -23,7 +23,10 @@ add_executable(list-dev src/tools/list_dev.cpp)
 target_link_libraries(list-dev deps mf-wrapper)
 
 add_executable(get-current-cam-config src/tools/get_current_cam_config.cpp)
-target_link_libraries(get-current-cam-config deps mf-wrapper)
+target_link_libraries(get-current-cam-config deps mf-wrapper system)
 
 add_executable(set-current-cam-config src/tools/set_current_cam_config.cpp)
 target_link_libraries(set-current-cam-config deps mf-wrapper system)
+
+# add_executable(cam-config src/tools/cam_config.cpp)
+# target_link_libraries(cam-config deps mf-wrapper system)

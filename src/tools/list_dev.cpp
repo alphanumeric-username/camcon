@@ -14,7 +14,7 @@ int main()
     std::wcout << "index | name\n";
     for(int i = 0; i < vde.count(); i++)
     {
-        std::wcout << i << " | " << vde.getDeviceName(i);
+        std::wcout << i << " | " << vde.getDeviceName(i) << '\n';
     }
 
     vde.release();

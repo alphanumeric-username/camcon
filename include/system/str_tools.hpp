@@ -8,4 +8,6 @@ namespace system_u::str_tools
 
 std::vector<std::string> split(std::string s, char sep);
 
+bool is_integer(std::string s);
+
 }
