@@ -43,6 +43,28 @@ CComPtr<IMFMediaSource> VideoDeviceEnumerator::getDevice(int idx)
 }
 
 
+CComPtr<IMFMediaSource> VideoDeviceEnumerator::getDeviceFromSymbolicLink(std::wstring symbolic_link)
+{
+    CComPtr<IMFActivate> pActivate { nullptr };
+    CComPtr<IMFMediaSource> pMediaSrc { nullptr };
+    
+    Attribute attr{};
+
+    attr.setAttributeGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID);
+    attr.setAttributeWSTR(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, symbolic_link);
+
+    auto hr = MFCreateDeviceSourceActivate(attr.pAttributes(), &pActivate);
+    if (FAILED(hr))
+    {
+        return nullptr;
+    }
+
+    hr = pActivate->ActivateObject(IID_PPV_ARGS(&pMediaSrc));
+
+    return FAILED(hr) ? nullptr : pMediaSrc;
+}
+
+
 std::wstring VideoDeviceEnumerator::getDeviceName(int idx)
 {
     checkIndexInBounds(idx);
@@ -51,6 +73,17 @@ std::wstring VideoDeviceEnumerator::getDeviceName(int idx)
     UINT32 length{0};
     videoCapDevs_[idx]->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, &dev_name, &length);
     return std::wstring { dev_name };
+}
+
+
+std::wstring VideoDeviceEnumerator::getSymbolicLink(int idx)
+{
+    checkIndexInBounds(idx);
+
+    LPWSTR symbolic_link{nullptr};
+    UINT32 length{0};
+    videoCapDevs_[idx]->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, &symbolic_link, &length);
+    return std::wstring { symbolic_link };
 }
 
 

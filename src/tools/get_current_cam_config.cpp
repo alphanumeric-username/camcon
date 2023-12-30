@@ -1,5 +1,6 @@
 #include <mf_wrapper/init.hpp>
 #include <mf_wrapper/vde.hpp>
+#include <mf_wrapper/camera_controller.hpp>
 
 #include <system/str_tools.hpp>
 
@@ -30,6 +31,7 @@ int main(int argc, char* argv[])
     camcon::initialize();
 
     camcon::VideoDeviceEnumerator vde{};
+    camcon::CameraController camController{};
     
     if(idx < 0 || idx >= vde.count())
     {
@@ -39,31 +41,17 @@ int main(int argc, char* argv[])
 
     auto devSrc {vde.getDevice(idx)};
 
-    CComPtr<IAMCameraControl> devSrcControl { nullptr };
-    devSrc->QueryInterface(IID_PPV_ARGS(&devSrcControl));
+    camController.setDevice(devSrc);
 
-    long lvalue{-1};
-    long flags{-1};
-
-    devSrcControl->Get(CameraControl_Pan, &lvalue, &flags);
-
-    print_property(devSrcControl, "pan", CameraControl_Pan);
-    print_property(devSrcControl, "tilt", CameraControl_Tilt);
-    print_property(devSrcControl, "roll", CameraControl_Roll);
-    print_property(devSrcControl, "zoom", CameraControl_Zoom);
-    print_property(devSrcControl, "exposure", CameraControl_Exposure);
-    print_property(devSrcControl, "iris", CameraControl_Iris);
-    print_property(devSrcControl, "focus", CameraControl_Focus);
+    std::cout << camController.getProperty(CameraControl_Pan).toString() << '\n';
+    std::cout << camController.getProperty(CameraControl_Tilt).toString() << '\n';
+    std::cout << camController.getProperty(CameraControl_Roll).toString() << '\n';
+    std::cout << camController.getProperty(CameraControl_Zoom).toString() << '\n';
+    std::cout << camController.getProperty(CameraControl_Exposure).toString() << '\n';
+    std::cout << camController.getProperty(CameraControl_Iris).toString() << '\n';
+    std::cout << camController.getProperty(CameraControl_Focus).toString() << '\n';
 
     camcon::finalize();
 
     return 0;
-}
-
-void print_property(CComPtr<IAMCameraControl> cc, std::string name, tagCameraControlProperty prop)
-{
-    long lvalue{-1};
-    long flags{-1};
-    cc->Get(prop, &lvalue, &flags);
-    std::cout << name << ',' << lvalue << ',' << flags << '\n';
 }

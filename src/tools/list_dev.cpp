@@ -11,10 +11,10 @@ int main()
     camcon::VideoDeviceEnumerator vde{};
 
     std::wcout << "Available devices:\n";
-    std::wcout << "index | name\n";
+    std::wcout << "index | name | symbolic link\n";
     for(int i = 0; i < vde.count(); i++)
     {
-        std::wcout << i << " | " << vde.getDeviceName(i) << '\n';
+        std::wcout << i << " | " << vde.getDeviceName(i) << " | " << vde.getSymbolicLink(i) << '\n';
     }
 
     vde.release();
