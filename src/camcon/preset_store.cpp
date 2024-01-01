@@ -23,7 +23,7 @@ std::vector<Preset> PresetStore::loadPresets()
     {
         if(f.is_regular_file() && f.path().extension().compare(".txt") == 0)
         {
-            auto f_lines { system_u::read_file_lines(f) };
+            auto f_lines { sys::read_file_lines(f) };
             Preset p{};
             p.name = f.path().stem();
             // std::vector<mfw::CameraControlPropertyValue> ccpvs{};
@@ -54,7 +54,7 @@ void PresetStore::savePreset(Preset preset)
         contents += prop.toString() + '\n';
     }
 
-    system_u::save_file(folder / (preset.name + L".txt"), contents);
+    sys::save_file(folder / (preset.name + L".txt"), contents);
 }
 
 }

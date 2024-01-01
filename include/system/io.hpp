@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <vector>
 
-namespace system_u {
+namespace sys {
 
 namespace fs = std::filesystem;
 

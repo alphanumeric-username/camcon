@@ -4,7 +4,7 @@
 #include <cwctype>
 #include <algorithm>
 
-namespace system_u::str_tools
+namespace sys::str_tools
 {
 
 std::vector<std::string> split(std::string s, char sep)
@@ -35,6 +35,10 @@ std::vector<std::string> split(std::string s, char sep)
 
 std::string trim(std::string s)
 {
+    if(s.empty()) {
+        return "";
+    }
+
     int i;
     for(i = 0; s[i] == ' ' || s[i] == '\n'; i++);
     
@@ -44,15 +48,19 @@ std::string trim(std::string s)
     return s.substr(i, j - i + 1);
 }
 
-std::wstring trim(std::wstring s)
+std::wstring trim(std::wstring ws)
 {
+    if(ws.empty()) {
+        return L"";
+    }
+
     int i;
-    for(i = 0; s[i] == L' ' || s[i] == L'\n'; i++);
+    for(i = 0; ws[i] == L' ' || ws[i] == L'\n'; i++);
     
     int j;
-    for(j = s.length() - 1; s[j] == L' ' || s[j] == L'\n'; j--);
+    for(j = ws.length() - 1; ws[j] == L' ' || ws[j] == L'\n'; j--);
 
-    return s.substr(i, j - i + 1);
+    return ws.substr(i, j - i + 1);
 }
 
 

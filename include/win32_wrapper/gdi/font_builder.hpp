@@ -12,7 +12,7 @@ namespace win32w
 class FontBuilder
 {
 public:
-    std::wstring family{};
+    std::wstring family{L"Arial"};
     Gdiplus::FontStyle style{Gdiplus::FontStyleRegular};
     float size{12};
 

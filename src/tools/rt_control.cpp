@@ -6,6 +6,7 @@
 #include <win32_wrapper/window_builder.hpp>
 #include <win32_wrapper/control_factory.hpp>
 #include <win32_wrapper/layout/tiled_layout.hpp>
+#include <win32_wrapper/gdi/gdi_text.hpp>
 
 #include <camcon/preset_store.hpp>
 
@@ -41,9 +42,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     int argc;
     auto argv {CommandLineToArgvW(pCmdLine, &argc)};
 
-    if(argc > 1 || !system_u::str_tools::is_integer(argv[0]))
+    if(argc > 1 || !sys::str_tools::is_integer(argv[0]))
     {
-        MessageBox(nullptr, L"Missing device index\n\nUsage:\n\trt-control <DEVICE_INDEX>", L"Error", MB_OK);
+        MessageBox(nullptr, L"Missing device index\n\nUsage:\n\trt-control <device_index>", L"Error", MB_OK);
         // std::wcout << L"Missing device index\n\nUsage:\n\trt-control <DEVICE_INDEX>\n";
         return 1;
     }
@@ -70,7 +71,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     wb.generateClassName();
     wb.createClass();
     auto style = WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX;
-    auto win_title = system_u::str_tools::join({TITLE, VERSION_STR, L"Connected"});
+    auto win_title = sys::str_tools::join({TITLE, VERSION_STR, L"Connected"});
     auto win = wb.build(win_title, CW_USEDEFAULT, CW_USEDEFAULT, W_WIDTH, W_HEIGHT, style);
 
     int btn_size = 64;
@@ -86,12 +87,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     tl.y = 20;
 
     win32w::ControlFactory cf{};
-    // auto btnLeft = cf.createButton(win, L"<", (int) center_x - btn_padding - btn_size, center_y, btn_size, btn_size);
-    // auto btnRight = cf.createButton(win, L">", (int) center_x + btn_padding + btn_size, center_y, btn_size, btn_size);
-    // auto btnUp = cf.createButton(win, L"^", (int) center_x, center_y  - btn_padding - btn_size, btn_size, btn_size);
-    // auto btnDown = cf.createButton(win, L"v", (int) center_x, center_y + btn_padding + btn_size, btn_size, btn_size);
-    // auto btnIn = cf.createButton(win, L"+", (int) center_x + btn_padding + btn_size, center_y  - btn_padding - btn_size, btn_size, btn_size);
-    // auto btnOut = cf.createButton(win, L"-", (int) center_x + btn_padding + btn_size, center_y  + btn_padding + btn_size, btn_size, btn_size);
     int x, y;
     std::tie(x, y) = tl.computePosition(0, 1);
     auto btnLeft = cf.createButton(win, L"<", x, y, btn_size, btn_size);
@@ -106,9 +101,24 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     std::tie(x, y) = tl.computePosition(2, 2);
     auto btnOut = cf.createButton(win, L"-", x, y, btn_size, btn_size);
 
-    auto cbPreset = cf.createComboBox(win, W_WIDTH/2 + 20, 10, W_WIDTH/2 - 40, 160);
-    auto editSave = cf.createEdit(win, W_WIDTH/2 + 20, 48, W_WIDTH/2 - 40, 24);
-    auto btnSave = cf.createButton(win, L"Save Preset", W_WIDTH - 20 - 160, 68 + 16, 160, 32);
+    auto txtPreset = std::make_shared<win32w::GDIText>();
+    auto cbPreset = cf.createComboBox(win, W_WIDTH/2 + 20, 10 + 16 + 10, W_WIDTH/2 - 50, 160);
+    auto txtSave = std::make_shared<win32w::GDIText>();
+    auto editSave = cf.createEdit(win, W_WIDTH/2 + 20, 10 + 16 + 10 + 16 + 10 + 16 + 20, W_WIDTH/2 - 50, 24);
+    auto btnSave = cf.createButton(win, L"Save Preset", W_WIDTH - 30 - 160, 10 + 16 + 10 + 16 + 10 + 16 + 20 + 16 + 20, 160, 32);
+
+    txtPreset->contents = L"Current preset:";
+    txtPreset->fontBuilder.size = 16;
+    txtPreset->x = W_WIDTH/2 + 20;
+    txtPreset->y = 10;
+
+    txtSave->contents = L"New preset:";
+    txtSave->fontBuilder.size = 16;
+    txtSave->x = W_WIDTH/2 + 20;
+    txtSave->y = 10 + 16 + 10 + 16 + 20;
+
+    win->addGDIText(txtPreset);
+    win->addGDIText(txtSave);
     
     ComboBox_SetText(cbPreset->hwnd, L"Custom");
     Edit_LimitText(editSave->hwnd, MAX_EDIT_TEXT);
@@ -161,20 +171,29 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         ComboBox_SetText(cbPreset->hwnd, L"Custom");
     };
     
+
     btnIn->onClick = [&](HWND hwnd) {
         auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Zoom);
+        // auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Exposure);
+
+        auto delta = GetKeyState(VK_SHIFT) & 0x8000 ? 10 : 1;
+
         if(prop.valid)
         {
-            cc.setProperty(prop.prop, prop.lvalue + 1);
+            cc.setProperty(prop.prop, prop.lvalue + delta);
         }
         ComboBox_SetText(cbPreset->hwnd, L"Custom");
     };
     
     btnOut->onClick = [&](HWND hwnd) {
         auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Zoom);
+        // auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Exposure);
+
+        auto delta = GetKeyState(VK_SHIFT) & 0x8000 ? 10 : 1;
+
         if(prop.valid)
         {
-            cc.setProperty(prop.prop, prop.lvalue - 1);
+            cc.setProperty(prop.prop, prop.lvalue - delta);
         }
         ComboBox_SetText(cbPreset->hwnd, L"Custom");
     };
@@ -194,7 +213,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         wchar_t tbuffer[MAX_EDIT_TEXT + 1] {};
         Edit_GetText(editSave->hwnd, tbuffer, MAX_EDIT_TEXT + 1);
         p.name = tbuffer;
-        p.name = system_u::str_tools::trim(p.name);
+        p.name = sys::str_tools::trim(p.name);
+        if(p.name.empty())
+        {
+            return;
+        }
+
         p.config = ccprops;
 
         bool found = false;
@@ -258,8 +282,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
             std::wstring rightSymbLink { dbdi->dbcc_name };
 
-            auto llsl = system_u::str_tools::tolower(devSymbLink).substr(0, 50);
-            auto lrsl = system_u::str_tools::tolower(rightSymbLink).substr(0, 50);
+            auto llsl = sys::str_tools::tolower(devSymbLink).substr(0, 50);
+            auto lrsl = sys::str_tools::tolower(rightSymbLink).substr(0, 50);
 
             if(llsl.compare(lrsl) == 0)
             {
@@ -269,7 +293,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
                 auto state = is_DBT_DEVICEREMOVECOMPLETE ? L"Disconnected" :
                              is_DBT_DEVICEARRIVAL ? L"Connected" : L"Unknow state";
 
-                SetWindowText(hwnd, system_u::str_tools::join({TITLE, VERSION_STR, state}).c_str());
+                SetWindowText(hwnd, sys::str_tools::join({TITLE, VERSION_STR, state}).c_str());
 
                 if(is_DBT_DEVICEARRIVAL)
                 {
@@ -298,6 +322,28 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
                 }
             }
         } 
+    });
+
+    win->setCallback(WM_KEYDOWN, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+    {
+        if(!cc.deviceIsSet())
+        {
+            return;
+        }
+
+        if(wParam == VK_LEFT)
+        {
+            btnLeft->onClick(hwnd);
+        } else if(wParam == VK_RIGHT)
+        {
+            btnRight->onClick(hwnd);
+        } else if(wParam == VK_UP)
+        {
+            btnUp->onClick(hwnd);
+        } else if(wParam == VK_DOWN)
+        {
+            btnDown->onClick(hwnd);
+        }
     });
 
     ShowWindow(win->hwnd, nCmdShow);

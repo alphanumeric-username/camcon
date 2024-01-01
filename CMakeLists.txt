@@ -27,13 +27,6 @@ file(GLOB camcon_SRC src/camcon/*.cpp)
 add_library(camcon ${camcon_SRC})
 target_link_libraries(camcon mf-wrapper)
 
-# file(GLOB ui_SRC src/ui/*.cpp)
-# add_library(ui ${ui_SRC})
-# target_link_libraries(ui sfml-graphics)
-
-# add_executable(camcon src/main.cpp)
-# target_link_libraries(camcon deps)
-
 add_executable(list-dev src/tools/list_dev.cpp)
 target_link_libraries(list-dev deps mf-wrapper)
 
@@ -46,13 +39,10 @@ target_link_libraries(set-current-cam-config deps mf-wrapper system)
 add_executable(rt-control WIN32 src/tools/rt_control.cpp)
 target_link_libraries(rt-control deps win32-wrapper mf-wrapper camcon)
 
+add_executable(dump-prop-ranges src/tools/dump_prop_ranges.cpp)
+target_link_libraries(dump-prop-ranges mf-wrapper system)
+
 add_compile_definitions(UNICODE)
-
-# add_executable(dev-probe src/tools/dev_probe.cpp)
-# target_link_libraries(dev-probe deps mf-wrapper system sfml-graphics)
-
-# add_executable(rt-control src/tools/rt_control.cpp)
-# target_link_libraries(rt-control deps mf-wrapper system sfml-graphics)
 
 # file(GLOB SFML_DLL ${CMAKE_PREFIX_PATH}/SFML/bin/*.dll)
 # file(COPY ${SFML_DLL} DESTINATION Debug)

@@ -45,6 +45,39 @@ void CameraController::setProperty(tagCameraControlProperty prop, long value)
     auto hr = control_->Set(prop, value, tagCameraControlFlags::CameraControl_Flags_Manual);
 }
 
+CameraControlPropertyRange CameraController::getPropertyRange(tagCameraControlProperty prop)
+{
+    CameraControlPropertyRange ccpr{};
+    ccpr.prop = prop;
+
+    if(!deviceIsSet()){
+        ccpr.valid = false;
+        return ccpr;
+    }
+
+    control_->GetRange(
+        ccpr.prop, 
+        &(ccpr.pMin),
+        &(ccpr.pMax),
+        &(ccpr.pSteppingDelta),
+        &(ccpr.pDefault),
+        &(ccpr.pCapsFlags)
+    );
+
+    return ccpr;
+}
+
+std::string CameraControlPropertyRange::toString()
+{
+    std::stringstream ss{};
+    ss << propToStr(prop) << "," << pMin 
+                          << "," << pMax
+                          << "," << pSteppingDelta
+                          << "," << pDefault
+                          << "," << pCapsFlags;
+    return ss.str();
+}
+
 std::string propToStr(tagCameraControlProperty prop)
 {
     if(prop == CameraControl_Pan)
@@ -97,7 +130,7 @@ CameraControlPropertyValue parsePropConfigString(std::string str)
     CameraControlPropertyValue propVal{};
     
     try {
-        auto tokens = system_u::str_tools::split(str, ',');
+        auto tokens = sys::str_tools::split(str, ',');
         propVal.prop = strToProp(tokens.at(0));
         propVal.lvalue = std::stoi(tokens.at(1));
         propVal.flags = std::stoi(tokens.at(2));

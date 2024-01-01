@@ -5,7 +5,7 @@
 #include <sstream>
 #include <iostream>
 
-namespace system_u
+namespace sys
 {
 
 std::string read_file(fs::path filename) 
