@@ -8,7 +8,7 @@
 
 #include <string>
 
-namespace camcon
+namespace mfw
 {
 
 struct CameraControlPropertyValue

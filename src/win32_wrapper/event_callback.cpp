@@ -5,12 +5,12 @@
 namespace win32w
 {
 
-LRESULT eventCallback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT eventCallback(HWND parentHwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    auto window = window_registry::getWindow(hwnd);
+    auto window = window_registry::getWindow(parentHwnd);
     if(window == nullptr)
     {
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
+        return DefWindowProc(parentHwnd, uMsg, wParam, lParam);
     }
 
     if(uMsg == WM_DESTROY)
@@ -21,7 +21,7 @@ LRESULT eventCallback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         PAINTSTRUCT ps;
 
-        HDC hdc = BeginPaint(hwnd, &ps);
+        HDC hdc = BeginPaint(parentHwnd, &ps);
             FillRect(hdc, &(ps.rcPaint), (HBRUSH) (COLOR_WINDOW+1));
             
             for(auto t : window->getGdiTextList())
@@ -30,7 +30,7 @@ LRESULT eventCallback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 t->onPaint(hdc);
             }
 
-        EndPaint(hwnd, &ps);
+        EndPaint(parentHwnd, &ps);
 
         return 0;
     } else if (uMsg == WM_COMMAND)
@@ -42,17 +42,26 @@ LRESULT eventCallback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 if(c->hwnd == reinterpret_cast<HWND>(lParam))
                 {
-                    c->onClick(hwnd);
+                    c->onClick(parentHwnd);
+                }
+            }
+        } else if (eventCode == CBN_SELCHANGE)
+        {
+            for(auto c : window->getControlList())
+            {
+                if(c->hwnd == reinterpret_cast<HWND>(lParam))
+                {
+                    c->onSelect(parentHwnd);
                 }
             }
         }
 
         return 0;
     } else {
-        window->getCallback(uMsg)(hwnd, uMsg, wParam, lParam);
+        window->getCallback(uMsg)(parentHwnd, uMsg, wParam, lParam);
     }
 
-    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    return DefWindowProc(parentHwnd, uMsg, wParam, lParam);
 }
 
 }

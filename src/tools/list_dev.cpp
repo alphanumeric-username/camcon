@@ -6,9 +6,9 @@
 
 int main()
 {
-    camcon::initialize();
+    mfw::initialize();
 
-    camcon::VideoDeviceEnumerator vde{};
+    mfw::VideoDeviceEnumerator vde{};
 
     std::wcout << "Available devices:\n";
     std::wcout << "index | name | symbolic link\n";
@@ -19,7 +19,7 @@ int main()
 
     vde.release();
 
-    camcon::finalize();
+    mfw::finalize();
 
     return 0;
 }

@@ -44,4 +44,26 @@ std::vector<std::string> read_file_lines(fs::path filename) {
     return str_tools::split(read_file(filename), '\n');
 }
 
+void save_file(fs::path filename, std::string contents)
+{
+    std::fstream file{};
+
+    file.open(filename, std::ios::out);
+
+    if(!file.is_open()) 
+    {
+        std::stringstream msg_ss{};
+
+        msg_ss << "Couldn't open file " << filename;
+
+        std::cerr << msg_ss.str() << '\n';
+
+        return;
+    }
+
+    file << contents;
+
+    file.close();
+}
+
 }

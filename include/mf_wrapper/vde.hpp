@@ -7,7 +7,7 @@
 #include<vector>
 #include<string>
 
-namespace camcon
+namespace mfw
 {
 
 class VideoDeviceEnumerator

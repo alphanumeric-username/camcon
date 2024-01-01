@@ -3,13 +3,16 @@
 
 #include <sstream>
 
-namespace camcon
+namespace mfw
 {
 
 void CameraController::setDevice(CComPtr<IMFMediaSource> devSrc)
 {
     control_ = nullptr;
-    devSrc->QueryInterface(IID_PPV_ARGS(&control_));
+    if(devSrc != nullptr)
+    {
+        devSrc->QueryInterface(IID_PPV_ARGS(&control_));
+    }
 }
 
 bool CameraController::deviceIsSet()

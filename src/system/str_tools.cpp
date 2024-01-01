@@ -2,6 +2,7 @@
 // #include <stdlib.h>
 #include <cctype>
 #include <cwctype>
+#include <algorithm>
 
 namespace system_u::str_tools
 {
@@ -29,6 +30,29 @@ std::vector<std::string> split(std::string s, char sep)
     }
     
     return split_s;
+}
+
+
+std::string trim(std::string s)
+{
+    int i;
+    for(i = 0; s[i] == ' ' || s[i] == '\n'; i++);
+    
+    int j;
+    for(j = s.length() - 1; s[j] == ' ' || s[j] == '\n'; j--);
+
+    return s.substr(i, j - i + 1);
+}
+
+std::wstring trim(std::wstring s)
+{
+    int i;
+    for(i = 0; s[i] == L' ' || s[i] == L'\n'; i++);
+    
+    int j;
+    for(j = s.length() - 1; s[j] == L' ' || s[j] == L'\n'; j--);
+
+    return s.substr(i, j - i + 1);
 }
 
 
@@ -69,6 +93,33 @@ bool is_integer(std::string s)
         {
             continue;
         } else if(c == '-')
+        {
+            if(i == 0) {
+                continue;
+            }
+            return false;
+        } else {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool is_integer(std::wstring ws)
+{
+    for(int i {0}; i < ws.length(); i++)
+    {
+        auto c {ws[i]};
+
+        bool is_num = c == L'0' || c == L'1' || c == L'2' || c == L'3' || 
+                      c == L'4' || c == L'5' || c == L'6' || c == L'7' || 
+                      c == L'8' || c == L'9';
+        
+        if(is_num) 
+        {
+            continue;
+        } else if(c == L'-')
         {
             if(i == 0) {
                 continue;

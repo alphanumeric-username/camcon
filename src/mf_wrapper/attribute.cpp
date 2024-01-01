@@ -3,7 +3,7 @@
 #include <mfapi.h>
 
 
-namespace camcon
+namespace mfw
 {
 
 Attribute::Attribute()

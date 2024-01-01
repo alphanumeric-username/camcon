@@ -2,7 +2,7 @@
 
 #include <mfapi.h>
 
-namespace camcon
+namespace mfw
 {
 
 void initialize()

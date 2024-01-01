@@ -6,7 +6,7 @@
 #include <string>
 #include <tuple>
 
-namespace camcon
+namespace mfw
 {
 
 class Attribute

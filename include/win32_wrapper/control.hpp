@@ -2,6 +2,8 @@
 
 #include <Windows.h>
 
+#include <string>
+#include <vector>
 #include <functional>
 
 namespace win32w
@@ -17,6 +19,10 @@ public:
     /// @brief Called when the Control is clicked
     std::function<void(HWND)> onClick{[](HWND hwnd) {}};
     
+    /// @brief Called when an item is selected
+    std::function<void(HWND)> onSelect{[](HWND hwnd) {}};
+    
+    void addItem(std::wstring item);
 };
 
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace camcon
+namespace mfw
 {
 
 void initialize();

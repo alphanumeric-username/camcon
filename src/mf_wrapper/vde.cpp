@@ -4,7 +4,7 @@
 
 #include <exception>
 
-namespace camcon
+namespace mfw
 {
 
 VideoDeviceEnumerator::VideoDeviceEnumerator()

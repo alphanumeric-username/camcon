@@ -28,10 +28,10 @@ int main(int argc, char* argv[])
 
     auto idx = std::atoi(argv[1]);
 
-    camcon::initialize();
+    mfw::initialize();
 
-    camcon::VideoDeviceEnumerator vde{};
-    camcon::CameraController camController{};
+    mfw::VideoDeviceEnumerator vde{};
+    mfw::CameraController camController{};
     
     if(idx < 0 || idx >= vde.count())
     {
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     std::cout << camController.getProperty(CameraControl_Iris).toString() << '\n';
     std::cout << camController.getProperty(CameraControl_Focus).toString() << '\n';
 
-    camcon::finalize();
+    mfw::finalize();
 
     return 0;
 }

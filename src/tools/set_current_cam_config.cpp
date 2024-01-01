@@ -29,9 +29,9 @@ int main(int argc, char* argv[])
     auto idx = std::atoi(argv[1]);
     std::string filename {argv[2]};
 
-    camcon::initialize();
+    mfw::initialize();
 
-    camcon::VideoDeviceEnumerator vde{};
+    mfw::VideoDeviceEnumerator vde{};
 
     if(idx < 0 || idx >= vde.count())
     {
@@ -41,14 +41,14 @@ int main(int argc, char* argv[])
 
     auto devSrc {vde.getDevice(idx)};
 
-    camcon::CameraController camController{};
+    mfw::CameraController camController{};
     camController.setDevice(devSrc);
 
     auto lines = system_u::read_file_lines(filename);
     for(auto l : lines)
     {
         try {
-            auto propVal = camcon::parsePropConfigString(l);
+            auto propVal = mfw::parsePropConfigString(l);
             if(propVal.valid)
             {
                 camController.setProperty(propVal.prop, propVal.lvalue);
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
         } catch(std::exception e) {}
     }
 
-    camcon::finalize();
+    mfw::finalize();
 
     return 0;
 }
