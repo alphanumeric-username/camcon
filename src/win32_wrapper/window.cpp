@@ -39,4 +39,12 @@ MsgCallback Window::getCallback(UINT uMsg)
     return [](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {};
 }
 
+void Window::enableControls(bool enable)
+{
+    for(auto c : controlList_)
+    {
+        EnableWindow(c->hwnd, enable);
+    }
+}
+
 }

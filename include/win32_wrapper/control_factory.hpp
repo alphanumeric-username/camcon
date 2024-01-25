@@ -49,6 +49,20 @@ public:
     /// @return A pointer to the created Edit
     std::shared_ptr<Control> createEdit(std::shared_ptr<Window> parent, int x, int y, int width, int height, 
         DWORD style = WS_CHILD | WS_BORDER | WS_VISIBLE | ES_LEFT);
+    
+    /// @brief Creates a Windows Controls' TrackBar object for a Window.
+    /// @param parent Pointer to the Window object to be created
+    /// @param text Caption text
+    /// @param x x-position in pixels
+    /// @param y y-position in pixels
+    /// @param width width in pixels
+    /// @param height height in pixels
+    /// @param min Minimun value
+    /// @param min Maximun value
+    /// @param style Edit style flags
+    /// @return A pointer to the created TrackBar
+    std::shared_ptr<Control> createTrackBar(std::shared_ptr<Window> parent, std::wstring text, int x, int y, int width, int height, int min, int max,
+        DWORD style = WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS | TBS_ENABLESELRANGE);
 };
 
 }

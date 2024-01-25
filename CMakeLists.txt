@@ -23,12 +23,12 @@ file(GLOB win32-wrapper_SRC src/win32_wrapper/*.cpp src/win32_wrapper/gdi/*.cpp 
 add_library(win32-wrapper ${win32-wrapper_SRC})
 target_link_libraries(win32-wrapper deps)
 
-file(GLOB camcon_SRC src/camcon/*.cpp)
+file(GLOB camcon_SRC src/camcon/*.cpp src/camcon/rt_control/*.cpp)
 add_library(camcon ${camcon_SRC})
-target_link_libraries(camcon mf-wrapper)
+target_link_libraries(camcon mf-wrapper system win32-wrapper)
 
 add_executable(list-dev src/tools/list_dev.cpp)
-target_link_libraries(list-dev deps mf-wrapper)
+target_link_libraries(list-dev deps mf-wrapper win32-wrapper)
 
 add_executable(get-current-cam-config src/tools/get_current_cam_config.cpp)
 target_link_libraries(get-current-cam-config deps mf-wrapper system)

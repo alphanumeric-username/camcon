@@ -1,3 +1,10 @@
+#include <camcon/constants.hpp>
+#include <camcon/init.hpp>
+#include <camcon/arg_parse.hpp>
+#include <camcon/preset_store.hpp>
+#include <camcon/utils.hpp>
+#include <camcon/rt_control/select_device_window.hpp>
+
 #include <mf_wrapper/init.hpp>
 #include <mf_wrapper/vde.hpp>
 #include <mf_wrapper/camera_controller.hpp>
@@ -8,16 +15,15 @@
 #include <win32_wrapper/layout/tiled_layout.hpp>
 #include <win32_wrapper/gdi/gdi_text.hpp>
 
-#include <camcon/preset_store.hpp>
-
 #include <system/str_tools.hpp>
 
 #include <Dbt.h>
-#include <ks.h>
-#include <ksmedia.h>
+// #include <ks.h>
+// #include <ksmedia.h>
 #include <stringapiset.h>
 #include <windowsx.h>
 
+#include <algorithm>
 #include <iostream>
 #include <exception>
 #include <string>
@@ -25,31 +31,24 @@
 
 namespace fs = std::filesystem;
 
-const int W_WIDTH = 600;
-const int W_HEIGHT = 300;
-const std::wstring VERSION_STR {L"v3.3"};
-const std::wstring TITLE {L"CAMCON"};
-const int MAX_EDIT_TEXT {64};
-
-HDEVNOTIFY registerForDeviceNotification(HWND hwnd);
-fs::path getExePath();
+camcon::arg_parse::RTControlArgs processArgs(PWSTR pCmdLine);
+std::shared_ptr<win32w::Window> createMainWindow();
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
-    mfw::initialize();
-    auto [gdiToken, gdiStartupInput] = win32w::init();
+    camcon::init();
 
-    int argc;
-    auto argv {CommandLineToArgvW(pCmdLine, &argc)};
-
-    if(argc > 1 || !sys::str_tools::is_integer(argv[0]))
+    auto args = processArgs(pCmdLine);
+    
+    auto devIdx = args.index;
+    if(!args.indexWasProvided)
     {
-        MessageBox(nullptr, L"Missing device index\n\nUsage:\n\trt-control <device_index>", L"Error", MB_OK);
-        // std::wcout << L"Missing device index\n\nUsage:\n\trt-control <DEVICE_INDEX>\n";
-        return 1;
+        devIdx = camcon::promptDeviceIndexWindow();
+        if(devIdx < 0)
+        {
+            return 0;
+        }
     }
-
-    auto devIdx {std::stoi(argv[0])};
 
     mfw::VideoDeviceEnumerator vde{};
 
@@ -61,27 +60,19 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return 2;
     }
 
-    // auto devSrc {vde.getDevice(devIdx)};
     auto devSymbLink {vde.getSymbolicLink(devIdx)};
     auto devSrc {vde.getDeviceFromSymbolicLink(devSymbLink)};
     mfw::CameraController cc{};
     cc.setDevice(devSrc);
 
-    win32w::WindowBuilder wb{};
-    wb.generateClassName();
-    wb.createClass();
-    auto style = WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX;
-    auto win_title = sys::str_tools::join({TITLE, VERSION_STR, L"Connected"});
-    auto win = wb.build(win_title, CW_USEDEFAULT, CW_USEDEFAULT, W_WIDTH, W_HEIGHT, style);
+    auto win = createMainWindow();
 
     int btn_size = 64;
-    int center_x = (int) (W_WIDTH - btn_size)/2;
-    int center_y = (int) (W_HEIGHT - btn_size)/2;
     int btn_padding = 10;
 
     win32w::TiledLayout tl{};
-    tl.wItemSize = btn_size;
-    tl.hItemSize = btn_size;
+    tl.itemWidth = btn_size;
+    tl.itemHeight = btn_size;
     tl.padding = btn_padding;
     tl.x = 20;
     tl.y = 20;
@@ -102,81 +93,52 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     auto btnOut = cf.createButton(win, L"-", x, y, btn_size, btn_size);
 
     auto txtPreset = std::make_shared<win32w::GDIText>();
-    auto cbPreset = cf.createComboBox(win, W_WIDTH/2 + 20, 10 + 16 + 10, W_WIDTH/2 - 50, 160);
+    auto cbPreset = cf.createComboBox(win, camcon::W_WIDTH/2 + 20, 10 + 16 + 10, camcon::W_WIDTH/2 - 50, 160);
     auto txtSave = std::make_shared<win32w::GDIText>();
-    auto editSave = cf.createEdit(win, W_WIDTH/2 + 20, 10 + 16 + 10 + 16 + 10 + 16 + 20, W_WIDTH/2 - 50, 24);
-    auto btnSave = cf.createButton(win, L"Save Preset", W_WIDTH - 30 - 160, 10 + 16 + 10 + 16 + 10 + 16 + 20 + 16 + 20, 160, 32);
+    auto editSave = cf.createEdit(win, camcon::W_WIDTH/2 + 20, 10 + 16 + 10 + 16 + 10 + 16 + 20, camcon::W_WIDTH/2 - 50, 24);
+    auto btnSave = cf.createButton(win, L"Save Preset", camcon::W_WIDTH - 30 - 160, 10 + 16 + 10 + 16 + 10 + 16 + 20 + 16 + 20, 160, 32);
+
+    auto pr = cc.getPropertyRange(tagCameraControlProperty::CameraControl_Zoom);
+
+    auto tbZoom = cf.createTrackBar(win, L"Zoom", camcon::W_WIDTH/2 - 40, 20, 40, camcon::W_HEIGHT - 80, pr.pMin, pr.pMax,
+        WS_CHILD | WS_VISIBLE | TBS_VERT | TBS_TRANSPARENTBKGND );
 
     txtPreset->contents = L"Current preset:";
     txtPreset->fontBuilder.size = 16;
-    txtPreset->x = W_WIDTH/2 + 20;
+    txtPreset->x = camcon::W_WIDTH/2 + 20;
     txtPreset->y = 10;
 
     txtSave->contents = L"New preset:";
     txtSave->fontBuilder.size = 16;
-    txtSave->x = W_WIDTH/2 + 20;
+    txtSave->x = camcon::W_WIDTH/2 + 20;
     txtSave->y = 10 + 16 + 10 + 16 + 20;
 
     win->addGDIText(txtPreset);
     win->addGDIText(txtSave);
     
-    ComboBox_SetText(cbPreset->hwnd, L"Custom");
-    Edit_LimitText(editSave->hwnd, MAX_EDIT_TEXT);
+    // ComboBox_SetText(cbPreset->hwnd, );
+    cbPreset->setText(L"Custom");
+    Edit_LimitText(editSave->hwnd, camcon::MAX_EDIT_TEXT);
     
     camcon::PresetStore ps{};
 
-    ps.root = getExePath();
+    ps.root = camcon::getExePath();
     auto presets = ps.loadPresets();
+    
     for(auto & p : presets)
     {
-        ComboBox_AddString(cbPreset->hwnd, p.name.c_str());
+        cbPreset->addItem(p.name);
     }
 
+    auto varyCamProp = [&](tagCameraControlProperty ccp, int dir)
+    {
+        auto prop = cc.getProperty(ccp);
 
-    btnLeft->onClick = [&](HWND hwnd) {
-        auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Pan);
-        if(prop.valid)
-        {
-            cc.setProperty(prop.prop, prop.lvalue - 1);
-        }
-        ComboBox_SetText(cbPreset->hwnd, L"Custom");
-    };
-    
-    btnRight->onClick = [&](HWND hwnd) {
-        auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Pan);
-        if(prop.valid)
-        {
-            cc.setProperty(prop.prop, prop.lvalue + 1);
-        }
-        ComboBox_SetText(cbPreset->hwnd, L"Custom");
-    };
-    
-    btnUp->onClick = [&](HWND hwnd) {
-        auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Tilt);
-        // auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Exposure);
-        if(prop.valid)
-        {
-            cc.setProperty(prop.prop, prop.lvalue + 1);
-        }
-        ComboBox_SetText(cbPreset->hwnd, L"Custom");
-    };
-    
-    btnDown->onClick = [&](HWND hwnd) {
-        auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Tilt);
-        // auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Exposure);
-        if(prop.valid)
-        {
-            cc.setProperty(prop.prop, prop.lvalue - 1);
-        }
-        ComboBox_SetText(cbPreset->hwnd, L"Custom");
-    };
-    
+        int sign = dir > 0 ? 1
+                 : dir < 0 ? -1
+                 : 0;
 
-    btnIn->onClick = [&](HWND hwnd) {
-        auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Zoom);
-        // auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Exposure);
-
-        auto delta = GetKeyState(VK_SHIFT) & 0x8000 ? 10 : 1;
+        auto delta = sign * (GetKeyState(VK_SHIFT) & 0x8000 ? 10 : 1);
 
         if(prop.valid)
         {
@@ -184,18 +146,29 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         }
         ComboBox_SetText(cbPreset->hwnd, L"Custom");
     };
+
+    btnLeft->onClick = [&](HWND hwnd) {
+        varyCamProp(tagCameraControlProperty::CameraControl_Pan, -1);
+    };
+    
+    btnRight->onClick = [&](HWND hwnd) {
+        varyCamProp(tagCameraControlProperty::CameraControl_Pan, 1);
+    };
+    
+    btnUp->onClick = [&](HWND hwnd) {
+        varyCamProp(tagCameraControlProperty::CameraControl_Tilt, 1);
+    };
+    
+    btnDown->onClick = [&](HWND hwnd) {
+        varyCamProp(tagCameraControlProperty::CameraControl_Tilt, -11);
+    };
+    
+    btnIn->onClick = [&](HWND hwnd) {
+        varyCamProp(tagCameraControlProperty::CameraControl_Zoom, 1);
+    };
     
     btnOut->onClick = [&](HWND hwnd) {
-        auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Zoom);
-        // auto prop = cc.getProperty(tagCameraControlProperty::CameraControl_Exposure);
-
-        auto delta = GetKeyState(VK_SHIFT) & 0x8000 ? 10 : 1;
-
-        if(prop.valid)
-        {
-            cc.setProperty(prop.prop, prop.lvalue - delta);
-        }
-        ComboBox_SetText(cbPreset->hwnd, L"Custom");
+        varyCamProp(tagCameraControlProperty::CameraControl_Zoom, -1);
     };
 
     btnSave->onClick = [&](HWND hwnd) {
@@ -210,10 +183,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         };
 
         camcon::Preset p{};
-        wchar_t tbuffer[MAX_EDIT_TEXT + 1] {};
-        Edit_GetText(editSave->hwnd, tbuffer, MAX_EDIT_TEXT + 1);
-        p.name = tbuffer;
-        p.name = sys::str_tools::trim(p.name);
+        p.name = sys::str_tools::trim(editSave->getText());
+
         if(p.name.empty())
         {
             return;
@@ -238,11 +209,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             ComboBox_SetCurSel(cbPreset->hwnd, i);
         } else {
             presets.emplace_back(p);
-            ComboBox_AddString(cbPreset->hwnd, p.name.c_str());
+            cbPreset->addItem(p.name);
             ComboBox_SetCurSel(cbPreset->hwnd, presets.size() - 1);
         }
 
-        Edit_SetText(editSave->hwnd, L"");
+        editSave->setText(L"");
         
         ps.savePreset(p);
     };
@@ -266,7 +237,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         }
     };
 
-    auto windHdevNotify = registerForDeviceNotification(win->hwnd);
+    auto windHdevNotify = camcon::registerForDeviceNotification(win->hwnd);
     win->setCallback(WM_DEVICECHANGE, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         if(wParam == DBT_DEVICEREMOVECOMPLETE || wParam == DBT_DEVICEARRIVAL)
@@ -293,32 +264,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
                 auto state = is_DBT_DEVICEREMOVECOMPLETE ? L"Disconnected" :
                              is_DBT_DEVICEARRIVAL ? L"Connected" : L"Unknow state";
 
-                SetWindowText(hwnd, sys::str_tools::join({TITLE, VERSION_STR, state}).c_str());
+                SetWindowText(hwnd, sys::str_tools::join({camcon::TITLE, camcon::VERSION_STR, state}).c_str());
 
                 if(is_DBT_DEVICEARRIVAL)
                 {
                     cc.setDevice(vde.getDeviceFromSymbolicLink(devSymbLink));
-                    Button_Enable(btnUp->hwnd, true);
-                    Button_Enable(btnDown->hwnd, true);
-                    Button_Enable(btnLeft->hwnd, true);
-                    Button_Enable(btnRight->hwnd, true);
-                    Button_Enable(btnIn->hwnd, true);
-                    Button_Enable(btnOut->hwnd, true);
-                    Button_Enable(btnSave->hwnd, true);
-                    ComboBox_Enable(cbPreset->hwnd, true);
-                    Edit_Enable(editSave->hwnd, true);
+                    win->enableControls(true);
                 } else {
                     cc.setDevice(nullptr);
-                    Button_Enable(btnUp->hwnd, false);
-                    Button_Enable(btnDown->hwnd, false);
-                    Button_Enable(btnLeft->hwnd, false);
-                    Button_Enable(btnRight->hwnd, false);
-                    Button_Enable(btnIn->hwnd, false);
-                    Button_Enable(btnOut->hwnd, false);
-                    Button_Enable(btnSave->hwnd, false);
-                    ComboBox_Enable(cbPreset->hwnd, false);
-                    ComboBox_Enable(cbPreset->hwnd, false);
-                    Edit_Enable(editSave->hwnd, false);
+                    win->enableControls(false);
                 }
             }
         } 
@@ -359,26 +313,34 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
     vde.release();
 
-    mfw::finalize();
-    win32w::finalize(gdiToken);
+    camcon::finalize();
     return 0;
 }
 
-HDEVNOTIFY registerForDeviceNotification(HWND hwnd)
+camcon::arg_parse::RTControlArgs processArgs(PWSTR pCmdLine)
 {
-    DEV_BROADCAST_DEVICEINTERFACE di {0};
-    di.dbcc_size = sizeof(di);
-    di.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
-    di.dbcc_classguid = KSCATEGORY_CAPTURE;
+    int argc;
+    auto argv {CommandLineToArgvW(pCmdLine, &argc)};
 
-    return RegisterDeviceNotification(hwnd, &di, DEVICE_NOTIFY_WINDOW_HANDLE);
+    auto args { camcon::arg_parse::parseRTControlArgs(argc, argv)};
+
+    if(!args.syntaxIsValid)
+    {
+        MessageBox(nullptr, L"Usage:\n\trt-control <device_index>", L"Syntax Error", MB_OK);
+        args.indexWasProvided = false;
+        return args;
+    }
+
+    return args;
 }
 
-fs::path getExePath()
+std::shared_ptr<win32w::Window> createMainWindow()
 {
-    wchar_t path_buffer[MAX_PATH] {};
+    win32w::WindowBuilder wb{};
+    wb.generateClassName();
+    wb.createClass();
+    auto style = WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX;
+    auto win_title = sys::str_tools::join({camcon::TITLE, camcon::VERSION_STR, L"Connected"});
 
-    GetModuleFileName(nullptr, path_buffer, MAX_PATH);
-
-    return fs::path{path_buffer}.parent_path();
+    return wb.build(win_title, CW_USEDEFAULT, CW_USEDEFAULT, camcon::W_WIDTH, camcon::W_HEIGHT, style);
 }

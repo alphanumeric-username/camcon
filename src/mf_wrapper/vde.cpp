@@ -9,6 +9,18 @@ namespace mfw
 
 VideoDeviceEnumerator::VideoDeviceEnumerator()
 {
+    enumerateDevices();
+}
+
+void VideoDeviceEnumerator::enumerateDevices()
+{
+    if(videoCapDevs_ != nullptr)
+    {
+        release();
+    }
+
+    videoCapDevs_ = nullptr;
+
     Attribute attr{};
 
     attr.setAttributeGUID(
@@ -25,6 +37,7 @@ VideoDeviceEnumerator::VideoDeviceEnumerator()
         };
     }
 }
+
 
 UINT32 VideoDeviceEnumerator::count() const
 {

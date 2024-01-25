@@ -43,8 +43,10 @@ public:
     /// @param callback The callback. Must satisfy the MsgCallback type.
     void setCallback(UINT uMsg, MsgCallback callback);
 
-    std::vector<std::shared_ptr<Control>> getControlList();    
+    std::vector<std::shared_ptr<Control>> getControlList();
     std::vector<std::shared_ptr<GDIText>> getGdiTextList();
+
+    void enableControls(bool enable = true);
 
     /// @brief Returns a callback to a message code.
     /// @param uMsg The message code

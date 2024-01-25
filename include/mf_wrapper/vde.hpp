@@ -15,6 +15,7 @@ class VideoDeviceEnumerator
 public:
     VideoDeviceEnumerator();
     
+    void enumerateDevices();
     UINT32 count() const;
     CComPtr<IMFMediaSource> getDevice(int idx);
     CComPtr<IMFMediaSource> getDeviceFromSymbolicLink(std::wstring symbolic_link);
