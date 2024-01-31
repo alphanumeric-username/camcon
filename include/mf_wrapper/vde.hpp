@@ -22,6 +22,8 @@ public:
     std::wstring getDeviceName(int idx);
     std::vector<CComPtr<IMFMediaType>> getMediaTypes(int idx);
     std::wstring getSymbolicLink(int idx);
+
+    std::vector<std::wstring> getDeviceNames();
     
     
     void checkIndexInBounds(int idx);

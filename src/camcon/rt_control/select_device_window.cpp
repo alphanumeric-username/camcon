@@ -1,9 +1,12 @@
 #include <camcon/rt_control/select_device_window.hpp>
 
 #include <camcon/constants.hpp>
+#include <camcon/utils.hpp>
 #include <mf_wrapper/vde.hpp>
 #include <win32_wrapper/window_builder.hpp>
 #include <win32_wrapper/control_factory.hpp>
+
+#include <Dbt.h>
 
 #include <Windows.h>
 #include <windowsx.h>
@@ -29,19 +32,17 @@ int promptDeviceIndexWindow()
     int devIdx{-1};
 
     auto selWin = createWindow();
+    
 
     win32w::ControlFactory cf{};
     auto cbSelDev = cf.createComboBox(selWin, 20, 20, camcon::W_WIDTH/2 - 40, 160);
     auto btnSelDev = cf.createButton(selWin, L"Select", camcon::W_WIDTH/2 - 160 - 20, 60, 160, 32);
     
 
-    for(int i = 0; i < vde.count(); i++)
-    {
-        cbSelDev->addItem(vde.getDeviceName(i));
-    }
+    cbSelDev->addItem(vde.getDeviceNames());
 
 
-    btnSelDev->onClick = [&](HWND hwnd)
+    btnSelDev->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         auto currIdx = ComboBox_GetCurSel(cbSelDev->hwnd);
         if(currIdx == CB_ERR)
@@ -52,8 +53,20 @@ int promptDeviceIndexWindow()
         devIdx = currIdx;
 
         DestroyWindow(selWin->hwnd);
-    };
-    
+    });
+
+    auto windHdevNotify = camcon::registerForDeviceNotification(selWin->hwnd);
+    selWin->setCallback(WM_DEVICECHANGE, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+    {
+        if(wParam == DBT_DEVICEREMOVECOMPLETE || wParam == DBT_DEVICEARRIVAL)
+        {
+            cbSelDev->clearItems();
+
+            vde.enumerateDevices();
+
+            cbSelDev->addItem(vde.getDeviceNames());
+        } 
+    });
 
     ShowWindow(selWin->hwnd, SW_NORMAL);
 
@@ -63,6 +76,8 @@ int promptDeviceIndexWindow()
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+
+    windHdevNotify && UnregisterDeviceNotification(windHdevNotify);
 
     vde.release();
 

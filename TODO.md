@@ -1,13 +1,15 @@
 - v3.4:
+    - [x] Create layout system;
+    - [x] Add trackbar to control zoom;
+    - [x] Update device selection list upon device change;
 
-    - [ ] Create layout system;
-    - [ ] Add trackbar to control zoom;
-    - [ ] Update device selection list upon device change;
+- v3.5:
+    - [ ] Save state;
+    - [ ] Add file watcher;
+    - [ ] Change combo box to list box;
     - [ ] Create preset combo box manager;
     - [ ] Refactor code;
 
-- v3.5:
-
-    - [ ] Add file watcher;
-    - [ ] Change combo box to list box;
+- v3.6:
     - [ ] Add icons;
+    - [ ] Improve UI appearance;

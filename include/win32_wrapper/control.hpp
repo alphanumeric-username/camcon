@@ -1,9 +1,12 @@
 #pragma once
 
+#include <win32_wrapper/msg_callback.hpp>
+
 #include <Windows.h>
 
 #include <string>
 #include <vector>
+#include <map>
 #include <functional>
 
 namespace win32w
@@ -21,19 +24,19 @@ enum ControlType
 /// @brief Represents a Windows Controls object
 class Control
 {
+private:
+    std::map<UINT, MsgCallback> callbackMap_{};
+
 public:
     /// @brief Window handle to the object
     HWND hwnd;
 
     /// @brief Indicates the control created
     ControlType type;
+    
+    /// @brief Remove all items from a ComboBox
+    void clearItems();
 
-    /// @brief Called when the Control is clicked
-    std::function<void(HWND)> onClick{[](HWND hwnd) {}};
-    
-    /// @brief Called when an item is selected
-    std::function<void(HWND)> onSelect{[](HWND hwnd) {}};
-    
     /// @brief Adds a item to a ComboBox
     /// @param item The item display name
     void addItem(std::wstring item);
@@ -51,6 +54,10 @@ public:
     /// @param pos The desired position
     void setTrackPosition(int pos);
 
+    /// @brief Gets the position of the track in a Trackbar
+    /// @return The current position
+    int getTrackPosition();
+
     /// @brief Get the text of the Control
     /// @return The Control text
     std::wstring getText();
@@ -59,6 +66,15 @@ public:
     /// @param text The new text
     void setText(std::wstring text);
 
+    /// @brief Sets control position and size
+    void setRectangle(int x, int y, int width, int height);
+
+
+    MsgCallback getCallback(UINT msg);
+
+    void setCallback(UINT msg, MsgCallback callback);
+
+    
 
 };
 

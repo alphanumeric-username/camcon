@@ -34,13 +34,15 @@ void TiledLayout::updateLayout()
             int i = c + r * columns;
             if(i < children_.size())
             {
-                float idx { x_ + c * (itemWidth + padding) };
-                float idy { y_ + r * (itemHeight + padding) };
+                // float idx { x_ + c * (itemWidth + padding) };
+                // float idy { y_ + r * (itemHeight + padding) };
+                float idx { 1.0f * c * (itemWidth + padding) };
+                float idy { 1.0f * r * (itemHeight + padding) };
 
                 auto ix { x0 + idx };
                 auto iy { y0 + idy };
 
-                children_[i]->setRectangle(std::round(ix), std::round(iy), itemWidth, itemHeight);
+                children_[i]->setRectangle(ix, iy, itemWidth, itemHeight);
             } else 
             {
                 return;

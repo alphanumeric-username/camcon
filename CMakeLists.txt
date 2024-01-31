@@ -10,7 +10,7 @@ include_directories(include)
 # find_package(SFML COMPONENTS system graphics window CONFIG REQUIRED)
 
 add_library(deps src/deps_dummy.cpp)
-target_link_libraries(deps dxva2 evr mf mfplat mfplay mfreadwrite mfuuid strmiids comctl32 gdiplus)
+target_link_libraries(deps dxva2 evr mf mfplat mfplay mfreadwrite mfuuid strmiids comctl32 gdiplus dwmapi)
 
 file(GLOB system_SRC src/system/*.cpp)
 add_library(system ${system_SRC})

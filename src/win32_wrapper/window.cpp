@@ -47,4 +47,19 @@ void Window::enableControls(bool enable)
     }
 }
 
+void win32w::Window::repaint()
+{
+    InvalidateRect(hwnd, 0, TRUE);
+}
+
+
+RECT win32w::Window::rect()
+{
+    RECT r{};
+    // GetWindowRect(hwnd, &r);
+    GetClientRect(hwnd, &r);
+
+    return r;
+}
+
 }

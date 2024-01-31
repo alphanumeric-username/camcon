@@ -99,6 +99,18 @@ std::wstring VideoDeviceEnumerator::getSymbolicLink(int idx)
     return std::wstring { symbolic_link };
 }
 
+std::vector<std::wstring> mfw::VideoDeviceEnumerator::getDeviceNames()
+{
+    std::vector<std::wstring> names{};
+
+    for(int i = 0; i < count(); i++)
+    {
+        names.emplace_back(getDeviceName(i));
+    }
+
+    return names;
+}
+
 
 std::vector<CComPtr<IMFMediaType>> VideoDeviceEnumerator::getMediaTypes(int idx)
 {

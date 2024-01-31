@@ -53,7 +53,10 @@ public:
     /// @return If there is a callback for the specified message code, it is returned. Otherwise a empty function is returned.
     MsgCallback getCallback(UINT uMsg);
 
+    /// @brief Repaints the window
+    void repaint();
 
+    RECT rect();
 };
 
 }

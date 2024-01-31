@@ -6,7 +6,7 @@
 namespace win32w
 {
 
-class ContainerLayout : LayoutElement
+class ContainerLayout : public LayoutElement
 {
 private:
     float itemX_{0};

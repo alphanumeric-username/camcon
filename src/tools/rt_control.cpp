@@ -12,8 +12,12 @@
 #include <win32_wrapper/init.hpp>
 #include <win32_wrapper/window_builder.hpp>
 #include <win32_wrapper/control_factory.hpp>
-#include <win32_wrapper/layout/tiled_layout.hpp>
 #include <win32_wrapper/gdi/gdi_text.hpp>
+#include <win32_wrapper/layout/layout_manager.hpp>
+#include <win32_wrapper/layout/weighted_divider_layout.hpp>
+#include <win32_wrapper/layout/control_container.hpp>
+#include <win32_wrapper/layout/label_container.hpp>
+#include <win32_wrapper/layout/tiled_layout.hpp>
 
 #include <system/str_tools.hpp>
 
@@ -22,6 +26,8 @@
 // #include <ksmedia.h>
 #include <stringapiset.h>
 #include <windowsx.h>
+#include <dwmapi.h>
+#include <Shlwapi.h>
 
 #include <algorithm>
 #include <iostream>
@@ -37,6 +43,14 @@ std::shared_ptr<win32w::Window> createMainWindow();
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
     camcon::init();
+
+    // auto hinstDll = LoadLibrary(L"C:\\Windows\\System32\\ComCtl32.dll");
+    // auto DllGetVersion = (DLLGETVERSIONPROC) GetProcAddress(hinstDll, "DllGetVersion");
+
+    // DLLVERSIONINFO dvi{};
+    // ZeroMemory(&dvi, sizeof(dvi));
+    // dvi.cbSize = sizeof(dvi);
+    // (*DllGetVersion)(&dvi);
 
     auto args = processArgs(pCmdLine);
     
@@ -67,56 +81,107 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
     auto win = createMainWindow();
 
+    auto leRoot { std::make_shared<win32w::WeightedDividerLayout>() };
+
+    win32w::LayoutManager lm{};
+    lm.win = win;
+    lm.root = std::static_pointer_cast<win32w::LayoutElement>(leRoot);
+    
+    leRoot->ratios = { 0.4, 0.1, 0.5 };
+    // leRoot->ratios = { 0.5, 0.5 };
+    
     int btn_size = 64;
     int btn_padding = 10;
 
-    win32w::TiledLayout tl{};
-    tl.itemWidth = btn_size;
-    tl.itemHeight = btn_size;
-    tl.padding = btn_padding;
-    tl.x = 20;
-    tl.y = 20;
+    auto tl { std::make_shared<win32w::TiledLayout>() };
+    tl->itemWidth = btn_size;
+    tl->itemHeight = btn_size;
+    tl->padding = btn_padding;
+    tl->columns = 3;
 
     win32w::ControlFactory cf{};
-    int x, y;
-    std::tie(x, y) = tl.computePosition(0, 1);
-    auto btnLeft = cf.createButton(win, L"<", x, y, btn_size, btn_size);
-    std::tie(x, y) = tl.computePosition(2, 1);
-    auto btnRight = cf.createButton(win, L">", x, y, btn_size, btn_size);
-    std::tie(x, y) = tl.computePosition(1, 0);
-    auto btnUp = cf.createButton(win, L"^", x, y, btn_size, btn_size);
-    std::tie(x, y) = tl.computePosition(1, 2);
-    auto btnDown = cf.createButton(win, L"v", x, y, btn_size, btn_size);
-    std::tie(x, y) = tl.computePosition(2, 0);
-    auto btnIn = cf.createButton(win, L"+", x, y, btn_size, btn_size);
-    std::tie(x, y) = tl.computePosition(2, 2);
-    auto btnOut = cf.createButton(win, L"-", x, y, btn_size, btn_size);
+    auto btnLeft = cf.createButton(win, L"<", 0, 0, 0, 0);
+    auto btnRight = cf.createButton(win, L">", 0, 0, 0, 0);
+    auto btnUp = cf.createButton(win, L"^", 0, 0, 0, 0);
+    auto btnDown = cf.createButton(win, L"v", 0, 0, 0, 0);
+    auto btnIn = cf.createButton(win, L"+", 0, 0, 0, 0);
+    auto btnOut = cf.createButton(win, L"-", 0, 0, 0, 0);
+
+    tl->addChild(std::make_shared<win32w::LayoutElement>());
+    tl->addChild(std::make_shared<win32w::ControlContainer>(btnUp));
+    tl->addChild(std::make_shared<win32w::LayoutElement>());
+    tl->addChild(std::make_shared<win32w::ControlContainer>(btnLeft));
+    tl->addChild(std::make_shared<win32w::LayoutElement>());
+    tl->addChild(std::make_shared<win32w::ControlContainer>(btnRight));
+    tl->addChild(std::make_shared<win32w::LayoutElement>());
+    tl->addChild(std::make_shared<win32w::ControlContainer>(btnDown));
+    tl->addChild(std::make_shared<win32w::LayoutElement>());
 
     auto txtPreset = std::make_shared<win32w::GDIText>();
-    auto cbPreset = cf.createComboBox(win, camcon::W_WIDTH/2 + 20, 10 + 16 + 10, camcon::W_WIDTH/2 - 50, 160);
+    auto cbPreset = cf.createComboBox(win, 0, 0, 0, 0);
     auto txtSave = std::make_shared<win32w::GDIText>();
-    auto editSave = cf.createEdit(win, camcon::W_WIDTH/2 + 20, 10 + 16 + 10 + 16 + 10 + 16 + 20, camcon::W_WIDTH/2 - 50, 24);
-    auto btnSave = cf.createButton(win, L"Save Preset", camcon::W_WIDTH - 30 - 160, 10 + 16 + 10 + 16 + 10 + 16 + 20 + 16 + 20, 160, 32);
+    auto editSave = cf.createEdit(win, 0, 0, 0, 0);
+    auto btnSave = cf.createButton(win, L"Save Preset", 0, 0, 0, 0);
 
-    auto pr = cc.getPropertyRange(tagCameraControlProperty::CameraControl_Zoom);
+    auto wlRight { std::make_shared<win32w::WeightedDividerLayout>() };
 
-    auto tbZoom = cf.createTrackBar(win, L"Zoom", camcon::W_WIDTH/2 - 40, 20, 40, camcon::W_HEIGHT - 80, pr.pMin, pr.pMax,
-        WS_CHILD | WS_VISIBLE | TBS_VERT | TBS_TRANSPARENTBKGND );
+    wlRight->orientation = win32w::WeightedDividerLayoutOrientation::VERTICAL;
+    wlRight->ratios = {1.0f, 1.0f, 1.0f, 1.0f, 1.4f, 1.4f};
+
+    wlRight->addChild(std::make_shared<win32w::LabelContainer>(txtPreset));
+    wlRight->addChild(std::make_shared<win32w::ControlContainer>(cbPreset));
+    wlRight->addChild(std::make_shared<win32w::LabelContainer>(txtSave));
+    wlRight->addChild(std::make_shared<win32w::ControlContainer>(editSave));
+    wlRight->addChild(std::make_shared<win32w::ControlContainer>(btnSave));
+    wlRight->addChild(std::make_shared<win32w::LayoutElement>());
+
+    auto zoomRange = cc.getPropertyRange(tagCameraControlProperty::CameraControl_Zoom);
+    // zoomRange.pMin = 0;
+    // zoomRange.pMax = 500;
+
+
+    auto leTrackbar { std::make_shared<win32w::WeightedDividerLayout>() };
+    leTrackbar->orientation = win32w::VERTICAL;
+    leTrackbar->ratios = { 0.1f, 0.8f, 0.1f };
+
+    auto txtPlus { std::make_shared<win32w::GDIText>() };
+    auto txtMinus { std::make_shared<win32w::GDIText>() };
+    auto tbZoom = cf.createTrackBar(win, L"Zoom", 0, 0, 0, 0, zoomRange.pMin, zoomRange.pMax,
+        WS_CHILD | WS_VISIBLE | TBS_VERT | TBS_DOWNISLEFT );
+    tbZoom->setTrackPosition(zoomRange.pMax);
+
+    
+
+    leTrackbar->addChild(std::make_shared<win32w::LabelContainer>(txtPlus));
+    leTrackbar->addChild(std::make_shared<win32w::ControlContainer>(tbZoom));
+    leTrackbar->addChild(std::make_shared<win32w::LabelContainer>(txtMinus));
+
+    leRoot->addChild(tl);
+    leRoot->addChild(leTrackbar);
+    leRoot->addChild(wlRight);
+    lm.update();
+
+    
+    txtPlus->contents = L"+";
+    txtPlus->fontBuilder.size = 16;
+    txtPlus->alignment = win32w::MIDDLE | win32w::CENTER;
+    txtMinus->contents = L"-";
+    txtMinus->fontBuilder.size = 16;
+    txtMinus->alignment = win32w::MIDDLE | win32w::CENTER;
 
     txtPreset->contents = L"Current preset:";
     txtPreset->fontBuilder.size = 16;
-    txtPreset->x = camcon::W_WIDTH/2 + 20;
-    txtPreset->y = 10;
+    txtPreset->alignment = win32w::LEFT | win32w::MIDDLE;
 
     txtSave->contents = L"New preset:";
     txtSave->fontBuilder.size = 16;
-    txtSave->x = camcon::W_WIDTH/2 + 20;
-    txtSave->y = 10 + 16 + 10 + 16 + 20;
+    txtSave->alignment = win32w::LEFT | win32w::MIDDLE;
 
+    win->addGDIText(txtPlus);
+    win->addGDIText(txtMinus);
     win->addGDIText(txtPreset);
     win->addGDIText(txtSave);
     
-    // ComboBox_SetText(cbPreset->hwnd, );
     cbPreset->setText(L"Custom");
     Edit_LimitText(editSave->hwnd, camcon::MAX_EDIT_TEXT);
     
@@ -144,34 +209,35 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         {
             cc.setProperty(prop.prop, prop.lvalue + delta);
         }
-        ComboBox_SetText(cbPreset->hwnd, L"Custom");
+
+        cbPreset->setText(L"<Custom>");
     };
 
-    btnLeft->onClick = [&](HWND hwnd) {
+    btnLeft->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         varyCamProp(tagCameraControlProperty::CameraControl_Pan, -1);
-    };
+    });
     
-    btnRight->onClick = [&](HWND hwnd) {
+    btnRight->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         varyCamProp(tagCameraControlProperty::CameraControl_Pan, 1);
-    };
+    });
     
-    btnUp->onClick = [&](HWND hwnd) {
+    btnUp->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         varyCamProp(tagCameraControlProperty::CameraControl_Tilt, 1);
-    };
+    });
     
-    btnDown->onClick = [&](HWND hwnd) {
+    btnDown->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         varyCamProp(tagCameraControlProperty::CameraControl_Tilt, -11);
-    };
+    });
     
-    btnIn->onClick = [&](HWND hwnd) {
+    btnIn->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         varyCamProp(tagCameraControlProperty::CameraControl_Zoom, 1);
-    };
+    });
     
-    btnOut->onClick = [&](HWND hwnd) {
+    btnOut->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         varyCamProp(tagCameraControlProperty::CameraControl_Zoom, -1);
-    };
+    });
 
-    btnSave->onClick = [&](HWND hwnd) {
+    btnSave->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         if(!cc.deviceIsSet()) {
             return;
         }
@@ -216,10 +282,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         editSave->setText(L"");
         
         ps.savePreset(p);
-    };
+    });
 
-    cbPreset->onSelect = [&](HWND hwnd)
-    {
+    cbPreset->setCallback(CBN_SELCHANGE, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         if(!cc.deviceIsSet()) {
             return;
         }
@@ -234,8 +299,28 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         for(auto& prop : p.config)
         {
             cc.setProperty(prop.prop, prop.lvalue);
+            if(prop.prop == tagCameraControlProperty::CameraControl_Zoom)
+            {
+                int pos 
+                {
+                    zoomRange.pMin + (zoomRange.pMax - prop.lvalue)
+                };
+
+                tbZoom->setTrackPosition(pos);
+            }
         }
-    };
+    });
+
+    tbZoom->setCallback(WM_VSCROLL, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+        int pos 
+        { 
+            zoomRange.pMin + (zoomRange.pMax - tbZoom->getTrackPosition())
+        };
+
+        cc.setProperty(tagCameraControlProperty::CameraControl_Zoom, pos);
+        cbPreset->setText(L"<Custom>");
+    });
+
 
     auto windHdevNotify = camcon::registerForDeviceNotification(win->hwnd);
     win->setCallback(WM_DEVICECHANGE, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -278,30 +363,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         } 
     });
 
-    win->setCallback(WM_KEYDOWN, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-    {
-        if(!cc.deviceIsSet())
-        {
-            return;
-        }
-
-        if(wParam == VK_LEFT)
-        {
-            btnLeft->onClick(hwnd);
-        } else if(wParam == VK_RIGHT)
-        {
-            btnRight->onClick(hwnd);
-        } else if(wParam == VK_UP)
-        {
-            btnUp->onClick(hwnd);
-        } else if(wParam == VK_DOWN)
-        {
-            btnDown->onClick(hwnd);
-        }
-    });
-
     ShowWindow(win->hwnd, nCmdShow);
-    
+
     MSG msg{};
     while(GetMessage(&msg, nullptr, 0, 0) > 0)
     {
@@ -344,3 +407,4 @@ std::shared_ptr<win32w::Window> createMainWindow()
 
     return wb.build(win_title, CW_USEDEFAULT, CW_USEDEFAULT, camcon::W_WIDTH, camcon::W_HEIGHT, style);
 }
+

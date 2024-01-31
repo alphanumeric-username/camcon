@@ -7,12 +7,14 @@
 namespace win32w
 {
 
-class ControlContainer : LayoutElement
+class ControlContainer : public LayoutElement
 {
 private:
     std::shared_ptr<Control> ctrl_{ nullptr };
 
 public:
+    ControlContainer();
+    ControlContainer(std::shared_ptr<Control> ctrl);
 
     void setControl(std::shared_ptr<Control> ctrl);
 

@@ -2,6 +2,8 @@
 
 #include <win32_wrapper/window_registry.hpp>
 
+#include <CommCtrl.h>
+
 namespace win32w
 {
 
@@ -33,33 +35,49 @@ LRESULT eventCallback(HWND parentHwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         EndPaint(parentHwnd, &ps);
 
         return 0;
-    } else if (uMsg == WM_COMMAND)
+    } else if (uMsg == WM_COMMAND || uMsg == WM_NOTIFY || uMsg == WM_VSCROLL)
     {
-        auto eventCode = HIWORD(wParam);
-        if(eventCode == BN_CLICKED)
+        UINT eventCode {0};
+        
+        eventCode = uMsg == WM_COMMAND ? HIWORD(wParam) : 
+                    uMsg == WM_NOTIFY ? ((NMHDR*) lParam)->code
+                                      : WM_VSCROLL;
+
+        for(auto c : window->getControlList())
         {
-            for(auto c : window->getControlList())
+            if(c->hwnd == reinterpret_cast<HWND>(lParam))
             {
-                if(c->hwnd == reinterpret_cast<HWND>(lParam))
-                {
-                    c->onClick(parentHwnd);
-                }
-            }
-        } else if (eventCode == CBN_SELCHANGE)
-        {
-            for(auto c : window->getControlList())
-            {
-                if(c->hwnd == reinterpret_cast<HWND>(lParam))
-                {
-                    c->onSelect(parentHwnd);
-                }
+                c->getCallback(eventCode)(parentHwnd, uMsg, wParam, lParam);
+                break;
             }
         }
 
-        return 0;
+        // if(eventCode == BN_CLICKED)
+        // {
+        //     for(auto c : window->getControlList())
+        //     {
+        //         if(c->hwnd == reinterpret_cast<HWND>(lParam))
+        //         {
+        //             c->onClick(parentHwnd);
+        //         }
+        //     }
+        // } else if (eventCode == CBN_SELCHANGE)
+        // {
+        //     for(auto c : window->getControlList())
+        //     {
+        //         if(c->hwnd == reinterpret_cast<HWND>(lParam))
+        //         {
+        //             c->onSelect(parentHwnd);
+        //         }
+        //     }
+        // }
+
+        // return 0;
     } else {
         window->getCallback(uMsg)(parentHwnd, uMsg, wParam, lParam);
     }
+
+    auto ret = DefWindowProc(parentHwnd, uMsg, wParam, lParam);
 
     return DefWindowProc(parentHwnd, uMsg, wParam, lParam);
 }

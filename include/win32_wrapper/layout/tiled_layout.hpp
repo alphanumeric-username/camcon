@@ -8,7 +8,7 @@ namespace win32w
 {
 
 /// @brief A layout which distribute elements over equal sized cells.
-class TiledLayout : LayoutElement
+class TiledLayout : public LayoutElement
 {
 public:
     // int x {0};

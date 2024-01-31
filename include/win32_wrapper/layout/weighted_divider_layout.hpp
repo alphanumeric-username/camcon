@@ -9,7 +9,7 @@ namespace win32w
 
 enum WeightedDividerLayoutOrientation { HORIZONTAL, VERTICAL };
 
-class WeightedDividerLayout: LayoutElement
+class WeightedDividerLayout: public LayoutElement
 {
 public:
     WeightedDividerLayoutOrientation orientation{HORIZONTAL};
