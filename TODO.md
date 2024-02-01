@@ -13,3 +13,4 @@
 - v3.6:
     - [ ] Add icons;
     - [ ] Improve UI appearance;
+    - [ ] Add README.md;
