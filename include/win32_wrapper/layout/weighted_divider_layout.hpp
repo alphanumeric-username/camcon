@@ -14,6 +14,7 @@ class WeightedDividerLayout: public LayoutElement
 public:
     WeightedDividerLayoutOrientation orientation{HORIZONTAL};
     float padding{10};
+    float margin{0};
     std::vector<float> ratios {};
     float defaultRatio {1.0};
 

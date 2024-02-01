@@ -38,7 +38,27 @@
 namespace fs = std::filesystem;
 
 camcon::arg_parse::RTControlArgs processArgs(PWSTR pCmdLine);
-std::shared_ptr<win32w::Window> createMainWindow();
+std::shared_ptr<win32w::Window> createMainWindow(std::wstring);
+void createButtonTiledLayout(win32w::LayoutManager& lm, 
+    std::shared_ptr<win32w::Control> btnUp,
+    std::shared_ptr<win32w::Control> btnDown,
+    std::shared_ptr<win32w::Control> btnLeft,
+    std::shared_ptr<win32w::Control> btnRight
+);
+
+void createTrackbarLayout(win32w::LayoutManager& lm,
+    std::shared_ptr<win32w::GDIText> txtPlus,
+    std::shared_ptr<win32w::Control> tbZoom,
+    std::shared_ptr<win32w::GDIText> txtMinus
+);
+
+void createRightLayout(win32w::LayoutManager& lm, 
+    std::shared_ptr<win32w::GDIText> txtPreset,
+    std::shared_ptr<win32w::Control> cbPreset,
+    std::shared_ptr<win32w::GDIText> txtSave,
+    std::shared_ptr<win32w::Control> editSave,
+    std::shared_ptr<win32w::Control> btnSave
+);
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
@@ -75,47 +95,27 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     }
 
     auto devSymbLink {vde.getSymbolicLink(devIdx)};
+    auto devFriendlyName { vde.getDeviceName(devIdx) };
     auto devSrc {vde.getDeviceFromSymbolicLink(devSymbLink)};
     mfw::CameraController cc{};
     cc.setDevice(devSrc);
 
-    auto win = createMainWindow();
+    auto win = createMainWindow(devFriendlyName);
 
     auto leRoot { std::make_shared<win32w::WeightedDividerLayout>() };
+    leRoot->ratios = { 0.4f, 0.05f, 0.05f, 0.5f };
+    leRoot->margin = 10;
 
     win32w::LayoutManager lm{};
     lm.win = win;
     lm.root = std::static_pointer_cast<win32w::LayoutElement>(leRoot);
-    
-    leRoot->ratios = { 0.4, 0.1, 0.5 };
-    // leRoot->ratios = { 0.5, 0.5 };
-    
-    int btn_size = 64;
-    int btn_padding = 10;
-
-    auto tl { std::make_shared<win32w::TiledLayout>() };
-    tl->itemWidth = btn_size;
-    tl->itemHeight = btn_size;
-    tl->padding = btn_padding;
-    tl->columns = 3;
 
     win32w::ControlFactory cf{};
+    
     auto btnLeft = cf.createButton(win, L"<", 0, 0, 0, 0);
     auto btnRight = cf.createButton(win, L">", 0, 0, 0, 0);
     auto btnUp = cf.createButton(win, L"^", 0, 0, 0, 0);
     auto btnDown = cf.createButton(win, L"v", 0, 0, 0, 0);
-    auto btnIn = cf.createButton(win, L"+", 0, 0, 0, 0);
-    auto btnOut = cf.createButton(win, L"-", 0, 0, 0, 0);
-
-    tl->addChild(std::make_shared<win32w::LayoutElement>());
-    tl->addChild(std::make_shared<win32w::ControlContainer>(btnUp));
-    tl->addChild(std::make_shared<win32w::LayoutElement>());
-    tl->addChild(std::make_shared<win32w::ControlContainer>(btnLeft));
-    tl->addChild(std::make_shared<win32w::LayoutElement>());
-    tl->addChild(std::make_shared<win32w::ControlContainer>(btnRight));
-    tl->addChild(std::make_shared<win32w::LayoutElement>());
-    tl->addChild(std::make_shared<win32w::ControlContainer>(btnDown));
-    tl->addChild(std::make_shared<win32w::LayoutElement>());
 
     auto txtPreset = std::make_shared<win32w::GDIText>();
     auto cbPreset = cf.createComboBox(win, 0, 0, 0, 0);
@@ -123,44 +123,21 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     auto editSave = cf.createEdit(win, 0, 0, 0, 0);
     auto btnSave = cf.createButton(win, L"Save Preset", 0, 0, 0, 0);
 
-    auto wlRight { std::make_shared<win32w::WeightedDividerLayout>() };
-
-    wlRight->orientation = win32w::WeightedDividerLayoutOrientation::VERTICAL;
-    wlRight->ratios = {1.0f, 1.0f, 1.0f, 1.0f, 1.4f, 1.4f};
-
-    wlRight->addChild(std::make_shared<win32w::LabelContainer>(txtPreset));
-    wlRight->addChild(std::make_shared<win32w::ControlContainer>(cbPreset));
-    wlRight->addChild(std::make_shared<win32w::LabelContainer>(txtSave));
-    wlRight->addChild(std::make_shared<win32w::ControlContainer>(editSave));
-    wlRight->addChild(std::make_shared<win32w::ControlContainer>(btnSave));
-    wlRight->addChild(std::make_shared<win32w::LayoutElement>());
-
     auto zoomRange = cc.getPropertyRange(tagCameraControlProperty::CameraControl_Zoom);
     // zoomRange.pMin = 0;
     // zoomRange.pMax = 500;
-
-
-    auto leTrackbar { std::make_shared<win32w::WeightedDividerLayout>() };
-    leTrackbar->orientation = win32w::VERTICAL;
-    leTrackbar->ratios = { 0.1f, 0.8f, 0.1f };
 
     auto txtPlus { std::make_shared<win32w::GDIText>() };
     auto txtMinus { std::make_shared<win32w::GDIText>() };
     auto tbZoom = cf.createTrackBar(win, L"Zoom", 0, 0, 0, 0, zoomRange.pMin, zoomRange.pMax,
         WS_CHILD | WS_VISIBLE | TBS_VERT | TBS_DOWNISLEFT );
     tbZoom->setTrackPosition(zoomRange.pMax);
-
     
-
-    leTrackbar->addChild(std::make_shared<win32w::LabelContainer>(txtPlus));
-    leTrackbar->addChild(std::make_shared<win32w::ControlContainer>(tbZoom));
-    leTrackbar->addChild(std::make_shared<win32w::LabelContainer>(txtMinus));
-
-    leRoot->addChild(tl);
-    leRoot->addChild(leTrackbar);
-    leRoot->addChild(wlRight);
+    createButtonTiledLayout(lm, btnUp, btnDown, btnLeft, btnRight);
+    createTrackbarLayout(lm, txtPlus, tbZoom, txtMinus);
+    leRoot->addChild(std::make_shared<win32w::LayoutElement>());
+    createRightLayout(lm, txtPreset, cbPreset, txtSave, editSave, btnSave);
     lm.update();
-
     
     txtPlus->contents = L"+";
     txtPlus->fontBuilder.size = 16;
@@ -182,7 +159,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     win->addGDIText(txtPreset);
     win->addGDIText(txtSave);
     
-    cbPreset->setText(L"Custom");
+    cbPreset->setText(L"<Custom>");
     Edit_LimitText(editSave->hwnd, camcon::MAX_EDIT_TEXT);
     
     camcon::PresetStore ps{};
@@ -227,14 +204,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     
     btnDown->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         varyCamProp(tagCameraControlProperty::CameraControl_Tilt, -11);
-    });
-    
-    btnIn->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-        varyCamProp(tagCameraControlProperty::CameraControl_Zoom, 1);
-    });
-    
-    btnOut->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-        varyCamProp(tagCameraControlProperty::CameraControl_Zoom, -1);
     });
 
     btnSave->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -349,7 +318,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
                 auto state = is_DBT_DEVICEREMOVECOMPLETE ? L"Disconnected" :
                              is_DBT_DEVICEARRIVAL ? L"Connected" : L"Unknow state";
 
-                SetWindowText(hwnd, sys::str_tools::join({camcon::TITLE, camcon::VERSION_STR, state}).c_str());
+                SetWindowText(hwnd, sys::str_tools::join({camcon::TITLE, camcon::VERSION_STR, L"-", devFriendlyName + L":", state}).c_str());
 
                 if(is_DBT_DEVICEARRIVAL)
                 {
@@ -397,14 +366,75 @@ camcon::arg_parse::RTControlArgs processArgs(PWSTR pCmdLine)
     return args;
 }
 
-std::shared_ptr<win32w::Window> createMainWindow()
+std::shared_ptr<win32w::Window> createMainWindow(std::wstring devFriendlyName)
 {
     win32w::WindowBuilder wb{};
     wb.generateClassName();
     wb.createClass();
     auto style = WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX;
-    auto win_title = sys::str_tools::join({camcon::TITLE, camcon::VERSION_STR, L"Connected"});
+    auto win_title = sys::str_tools::join({camcon::TITLE, camcon::VERSION_STR, L"-", devFriendlyName + L":", L"Connected"});
 
     return wb.build(win_title, CW_USEDEFAULT, CW_USEDEFAULT, camcon::W_WIDTH, camcon::W_HEIGHT, style);
 }
 
+void createButtonTiledLayout(win32w::LayoutManager & lm, 
+    std::shared_ptr<win32w::Control> btnUp, 
+    std::shared_ptr<win32w::Control> btnDown, 
+    std::shared_ptr<win32w::Control> btnLeft, 
+    std::shared_ptr<win32w::Control> btnRight)
+{
+    auto tl { std::make_shared<win32w::TiledLayout>() };
+    tl->itemWidth = 64;
+    tl->itemHeight = 64;
+    tl->padding = 10;
+    tl->columns = 3;
+
+    tl->addChild(std::make_shared<win32w::LayoutElement>());
+    tl->addChild(std::make_shared<win32w::ControlContainer>(btnUp));
+    tl->addChild(std::make_shared<win32w::LayoutElement>());
+    tl->addChild(std::make_shared<win32w::ControlContainer>(btnLeft));
+    tl->addChild(std::make_shared<win32w::LayoutElement>());
+    tl->addChild(std::make_shared<win32w::ControlContainer>(btnRight));
+    tl->addChild(std::make_shared<win32w::LayoutElement>());
+    tl->addChild(std::make_shared<win32w::ControlContainer>(btnDown));
+    tl->addChild(std::make_shared<win32w::LayoutElement>());
+
+    lm.root->addChild(tl);
+}
+
+
+void createTrackbarLayout(win32w::LayoutManager& lm,
+    std::shared_ptr<win32w::GDIText> txtPlus,
+    std::shared_ptr<win32w::Control> tbZoom,
+    std::shared_ptr<win32w::GDIText> txtMinus
+) {
+    auto leTrackbar { std::make_shared<win32w::WeightedDividerLayout>() };
+    leTrackbar->orientation = win32w::VERTICAL;
+    leTrackbar->ratios = { 0.1f, 0.8f, 0.1f };
+
+    leTrackbar->addChild(std::make_shared<win32w::LabelContainer>(txtPlus));
+    leTrackbar->addChild(std::make_shared<win32w::ControlContainer>(tbZoom));
+    leTrackbar->addChild(std::make_shared<win32w::LabelContainer>(txtMinus));
+}
+
+void createRightLayout(win32w::LayoutManager& lm, 
+    std::shared_ptr<win32w::GDIText> txtPreset,
+    std::shared_ptr<win32w::Control> cbPreset,
+    std::shared_ptr<win32w::GDIText> txtSave,
+    std::shared_ptr<win32w::Control> editSave,
+    std::shared_ptr<win32w::Control> btnSave
+) {
+    auto wlRight { std::make_shared<win32w::WeightedDividerLayout>() };
+
+    wlRight->orientation = win32w::WeightedDividerLayoutOrientation::VERTICAL;
+    wlRight->ratios = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 3.0f};
+
+    wlRight->addChild(std::make_shared<win32w::LabelContainer>(txtPreset));
+    wlRight->addChild(std::make_shared<win32w::ControlContainer>(cbPreset));
+    wlRight->addChild(std::make_shared<win32w::LabelContainer>(txtSave));
+    wlRight->addChild(std::make_shared<win32w::ControlContainer>(editSave));
+    wlRight->addChild(std::make_shared<win32w::ControlContainer>(btnSave));
+    wlRight->addChild(std::make_shared<win32w::LayoutElement>());
+
+    lm.root->addChild(wlRight);
+}
