@@ -415,6 +415,8 @@ void createTrackbarLayout(win32w::LayoutManager& lm,
     leTrackbar->addChild(std::make_shared<win32w::LabelContainer>(txtPlus));
     leTrackbar->addChild(std::make_shared<win32w::ControlContainer>(tbZoom));
     leTrackbar->addChild(std::make_shared<win32w::LabelContainer>(txtMinus));
+    
+    lm.root->addChild(leTrackbar);
 }
 
 void createRightLayout(win32w::LayoutManager& lm, 
@@ -425,15 +427,22 @@ void createRightLayout(win32w::LayoutManager& lm,
     std::shared_ptr<win32w::Control> btnSave
 ) {
     auto wlRight { std::make_shared<win32w::WeightedDividerLayout>() };
+    auto wlBtnSave { std::make_shared<win32w::WeightedDividerLayout>() };
+
+    wlBtnSave->ratios = {0.5f, 0.5f};
+    wlBtnSave->margin = 0;
+    wlBtnSave->addChild(std::make_shared<win32w::LayoutElement>());
+    wlBtnSave->addChild(std::make_shared<win32w::ControlContainer>(btnSave));
 
     wlRight->orientation = win32w::WeightedDividerLayoutOrientation::VERTICAL;
-    wlRight->ratios = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 3.0f};
+    wlRight->ratios = {1.0f, 1.0f, 1.0f, 1.0f, 2.0f, 4.0f};
 
     wlRight->addChild(std::make_shared<win32w::LabelContainer>(txtPreset));
     wlRight->addChild(std::make_shared<win32w::ControlContainer>(cbPreset));
     wlRight->addChild(std::make_shared<win32w::LabelContainer>(txtSave));
     wlRight->addChild(std::make_shared<win32w::ControlContainer>(editSave));
-    wlRight->addChild(std::make_shared<win32w::ControlContainer>(btnSave));
+    // wlRight->addChild(std::make_shared<win32w::ControlContainer>(btnSave));
+    wlRight->addChild(wlBtnSave);
     wlRight->addChild(std::make_shared<win32w::LayoutElement>());
 
     lm.root->addChild(wlRight);
