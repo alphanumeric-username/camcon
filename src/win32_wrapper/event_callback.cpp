@@ -35,6 +35,9 @@ LRESULT eventCallback(HWND parentHwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         EndPaint(parentHwnd, &ps);
 
         return 0;
+
+    // } else if (uMsg == WM_ERASEBKGND) {
+
     } else if (uMsg == WM_COMMAND || uMsg == WM_NOTIFY || uMsg == WM_VSCROLL)
     {
         UINT eventCode {0};
@@ -51,33 +54,9 @@ LRESULT eventCallback(HWND parentHwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 break;
             }
         }
-
-        // if(eventCode == BN_CLICKED)
-        // {
-        //     for(auto c : window->getControlList())
-        //     {
-        //         if(c->hwnd == reinterpret_cast<HWND>(lParam))
-        //         {
-        //             c->onClick(parentHwnd);
-        //         }
-        //     }
-        // } else if (eventCode == CBN_SELCHANGE)
-        // {
-        //     for(auto c : window->getControlList())
-        //     {
-        //         if(c->hwnd == reinterpret_cast<HWND>(lParam))
-        //         {
-        //             c->onSelect(parentHwnd);
-        //         }
-        //     }
-        // }
-
-        // return 0;
-    } else {
-        window->getCallback(uMsg)(parentHwnd, uMsg, wParam, lParam);
     }
 
-    auto ret = DefWindowProc(parentHwnd, uMsg, wParam, lParam);
+    window->getCallback(uMsg)(parentHwnd, uMsg, wParam, lParam);
 
     return DefWindowProc(parentHwnd, uMsg, wParam, lParam);
 }

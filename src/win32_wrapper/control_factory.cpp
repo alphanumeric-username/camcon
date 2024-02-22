@@ -97,4 +97,27 @@ std::shared_ptr<Control> ControlFactory::createTrackBar(std::shared_ptr<Window> 
     return ctrl;
 }
 
+std::shared_ptr<Control> ControlFactory::createListBox(std::shared_ptr<Window> parent, int x, int y, int width, int height, DWORD style)
+{
+    auto hwnd = CreateWindow(
+        WC_LISTBOX,
+        L"",
+        style,
+        x, y, width, height,
+        parent->hwnd,
+        nullptr,
+        (HINSTANCE) GetWindowLongPtr(parent->hwnd, GWLP_HINSTANCE),
+        nullptr
+    );
+
+    auto ctrl { std::make_shared<Control>() };
+
+    ctrl->hwnd = hwnd;
+    ctrl->type = ControlType::LIST_BOX;
+
+    parent->addControl(ctrl);
+    
+    return ctrl;
+}
+
 }

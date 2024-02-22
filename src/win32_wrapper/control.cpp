@@ -8,15 +8,23 @@ namespace win32w
 
 void Control::clearItems()
 {
-    if(type == ControlType::COMBO_BOX) {
+    if(type == ControlType::COMBO_BOX) 
+    {
         ComboBox_ResetContent(this->hwnd);
+    } else if (type == ControlType::LIST_BOX)
+    {
+        ListBox_ResetContent(this->hwnd);
     }
 }
 
 void Control::addItem(std::wstring item)
 {
-    if(type == ControlType::COMBO_BOX) {
+    if(type == ControlType::COMBO_BOX) 
+    {
         ComboBox_AddString(this->hwnd, item.c_str());
+    } else if (type == ControlType::LIST_BOX)
+    {
+        ListBox_AddString(this->hwnd, item.c_str());
     }
 }
 
@@ -25,6 +33,30 @@ void Control::addItem(std::vector<std::wstring> items)
     for(auto& i : items)
     {
         addItem(i);
+    }
+}
+
+int Control::getCurrentItemIndex()
+{
+    if(type == COMBO_BOX)
+    {
+        return ComboBox_GetCurSel(hwnd);
+    } else if(type == LIST_BOX)
+    {
+        return ListBox_GetCurSel(hwnd);
+    }
+
+    return -1;
+}
+
+void Control::setCurrentItemIndex(int idx)
+{
+    if(type == COMBO_BOX)
+    {
+        ComboBox_SetCurSel(hwnd, idx);
+    } else if(type == LIST_BOX)
+    {
+        ListBox_SetCurSel(hwnd, idx);
     }
 }
 
@@ -102,6 +134,11 @@ MsgCallback Control::getCallback(UINT uMsg)
 void Control::setCallback(UINT uMsg, MsgCallback callback)
 {
     callbackMap_.insert_or_assign(uMsg, callback);
+}
+
+void Control::setEnabled(bool enabled)
+{
+    EnableWindow(hwnd, enabled);
 }
 
 }

@@ -17,7 +17,8 @@ enum ControlType
     BUTTON,
     EDIT,
     COMBO_BOX,
-    TRACKBAR
+    TRACKBAR,
+    LIST_BOX
 };
 
 
@@ -45,6 +46,14 @@ public:
     /// @param items The items vector
     void addItem(std::vector<std::wstring> items);
 
+    /// @brief Gets the current selected item index
+    /// @return The index of the selected item or CB_ERR if none is selected
+    int getCurrentItemIndex();
+    
+    /// @brief Sets the current selected item index
+    /// @param idx The index of the item to be selected
+    void setCurrentItemIndex(int idx);
+    
     /// @brief Defines the maximum and minimum values for a Trackbar
     /// @param min Minimum value
     /// @param max Maximum value
@@ -68,6 +77,10 @@ public:
 
     /// @brief Sets control position and size
     void setRectangle(int x, int y, int width, int height);
+
+    /// @brief Enables and disables the control
+    /// @param enabled If `true`, enables the control. If `false` disables it
+    void setEnabled(bool enabled);
 
 
     MsgCallback getCallback(UINT msg);

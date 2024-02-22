@@ -46,4 +46,15 @@ void GDIText::onPaint(HDC hdc)
     }
 }
 
+RECT GDIText::rect()
+{
+    RECT r{};
+    r.left = x;
+    r.top = y;
+    r.right = x + width;
+    r.bottom = y + height;
+
+    return r;
+}
+
 }

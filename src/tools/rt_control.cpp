@@ -54,7 +54,7 @@ void createTrackbarLayout(win32w::LayoutManager& lm,
 
 void createRightLayout(win32w::LayoutManager& lm, 
     std::shared_ptr<win32w::GDIText> txtPreset,
-    std::shared_ptr<win32w::Control> cbPreset,
+    std::shared_ptr<win32w::Control> lbPreset,
     std::shared_ptr<win32w::GDIText> txtSave,
     std::shared_ptr<win32w::Control> editSave,
     std::shared_ptr<win32w::Control> btnSave
@@ -75,7 +75,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     auto args = processArgs(pCmdLine);
     
     auto devIdx = args.index;
-    if(!args.indexWasProvided)
+
+    if(!args.syntaxIsValid)
+    {
+        return 1;
+    }
+
+    if(!args.indexWasProvided && args.syntaxIsValid)
     {
         devIdx = camcon::promptDeviceIndexWindow();
         if(devIdx < 0)
@@ -118,7 +124,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     auto btnDown = cf.createButton(win, L"v", 0, 0, 0, 0);
 
     auto txtPreset = std::make_shared<win32w::GDIText>();
-    auto cbPreset = cf.createComboBox(win, 0, 0, 0, 0);
+    auto lbPreset = cf.createListBox(win, 0, 0, 0, 0,
+        WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | LBS_HASSTRINGS | LBS_NOTIFY | LBS_DISABLENOSCROLL | LBS_NOINTEGRALHEIGHT | WS_BORDER | WS_VSCROLL);
     auto txtSave = std::make_shared<win32w::GDIText>();
     auto editSave = cf.createEdit(win, 0, 0, 0, 0);
     auto btnSave = cf.createButton(win, L"Save Preset", 0, 0, 0, 0);
@@ -132,11 +139,21 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     auto tbZoom = cf.createTrackBar(win, L"Zoom", 0, 0, 0, 0, zoomRange.pMin, zoomRange.pMax,
         WS_CHILD | WS_VISIBLE | TBS_VERT | TBS_DOWNISLEFT );
     tbZoom->setTrackPosition(zoomRange.pMax);
+
+    auto updateTbPos = [&](int t) 
+    {
+        int pos 
+        {
+            zoomRange.pMin + (zoomRange.pMax - t)
+        };
+
+        tbZoom->setTrackPosition(pos);
+    };
     
     createButtonTiledLayout(lm, btnUp, btnDown, btnLeft, btnRight);
     createTrackbarLayout(lm, txtPlus, tbZoom, txtMinus);
     leRoot->addChild(std::make_shared<win32w::LayoutElement>());
-    createRightLayout(lm, txtPreset, cbPreset, txtSave, editSave, btnSave);
+    createRightLayout(lm, txtPreset, lbPreset, txtSave, editSave, btnSave);
     lm.update();
     
     txtPlus->contents = L"+";
@@ -146,7 +163,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     txtMinus->fontBuilder.size = 16;
     txtMinus->alignment = win32w::MIDDLE | win32w::CENTER;
 
-    txtPreset->contents = L"Current preset:";
+    // txtPreset->contents = L"Current preset:";
+    txtPreset->contents = L"Current preset: <Custom>";
     txtPreset->fontBuilder.size = 16;
     txtPreset->alignment = win32w::LEFT | win32w::MIDDLE;
 
@@ -159,8 +177,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     win->addGDIText(txtPreset);
     win->addGDIText(txtSave);
     
-    cbPreset->setText(L"<Custom>");
+    // lbPreset->setText(L"<Custom>");
     Edit_LimitText(editSave->hwnd, camcon::MAX_EDIT_TEXT);
+    
+    camcon::Preset currentPreset{};
+    currentPreset.name = L"<Custom>";
+    currentPreset.config.emplace_back(cc.getProperty(tagCameraControlProperty::CameraControl_Pan));
+    currentPreset.config.emplace_back(cc.getProperty(tagCameraControlProperty::CameraControl_Tilt));
+    currentPreset.config.emplace_back(cc.getProperty(tagCameraControlProperty::CameraControl_Zoom));
+
     
     camcon::PresetStore ps{};
 
@@ -169,7 +194,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     
     for(auto & p : presets)
     {
-        cbPreset->addItem(p.name);
+        lbPreset->addItem(p.name);
     }
 
     auto varyCamProp = [&](tagCameraControlProperty ccp, int dir)
@@ -187,7 +212,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             cc.setProperty(prop.prop, prop.lvalue + delta);
         }
 
-        cbPreset->setText(L"<Custom>");
+        currentPreset.name = L"<Custom>";
+        
+        txtPreset->contents = sys::str_tools::join({L"Current preset:", currentPreset.name});
+        win->repaint(txtPreset->rect());
+
+        currentPreset.updateProperty(cc.getProperty(prop.prop));
     };
 
     btnLeft->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -241,25 +271,31 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         }
 
         if(found) {
-            ComboBox_SetCurSel(cbPreset->hwnd, i);
+            lbPreset->setCurrentItemIndex(i);
+            // ComboBox_SetCurSel(lbPreset->hwnd, i);
         } else {
             presets.emplace_back(p);
-            cbPreset->addItem(p.name);
-            ComboBox_SetCurSel(cbPreset->hwnd, presets.size() - 1);
+            lbPreset->addItem(p.name);
+            lbPreset->setCurrentItemIndex(presets.size() - 1);
+            // ComboBox_SetCurSel(lbPreset->hwnd, presets.size() - 1);
         }
 
+        currentPreset = p;
+        txtPreset->contents = sys::str_tools::join({L"Current preset:", currentPreset.name});
+        win->repaint(txtPreset->rect());
         editSave->setText(L"");
         
         ps.savePreset(p);
     });
 
-    cbPreset->setCallback(CBN_SELCHANGE, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    lbPreset->setCallback(LBN_SELCHANGE, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         if(!cc.deviceIsSet()) {
             return;
         }
 
-        auto currIdx = ComboBox_GetCurSel(cbPreset->hwnd);
-        if(currIdx == CB_ERR)
+        // auto currIdx = ComboBox_GetCurSel(lbPreset->hwnd);
+        auto currIdx = lbPreset->getCurrentItemIndex();
+        if(currIdx == LB_ERR)
         {
             return;
         }
@@ -270,14 +306,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             cc.setProperty(prop.prop, prop.lvalue);
             if(prop.prop == tagCameraControlProperty::CameraControl_Zoom)
             {
-                int pos 
-                {
-                    zoomRange.pMin + (zoomRange.pMax - prop.lvalue)
-                };
-
-                tbZoom->setTrackPosition(pos);
+                updateTbPos(prop.lvalue);
             }
         }
+
+        currentPreset = p;
+        txtPreset->contents = sys::str_tools::join({L"Current preset:", currentPreset.name});
+        win->repaint(txtPreset->rect());
     });
 
     tbZoom->setCallback(WM_VSCROLL, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -287,7 +322,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         };
 
         cc.setProperty(tagCameraControlProperty::CameraControl_Zoom, pos);
-        cbPreset->setText(L"<Custom>");
+
+        currentPreset.name = L"<Custom>";
+        txtPreset->contents = sys::str_tools::join({L"Current preset:", currentPreset.name});
+        win->repaint(txtPreset->rect());
+        currentPreset.updateProperty(cc.getProperty(tagCameraControlProperty::CameraControl_Zoom));
     });
 
 
@@ -324,13 +363,31 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
                 {
                     cc.setDevice(vde.getDeviceFromSymbolicLink(devSymbLink));
                     win->enableControls(true);
+
+                    for(auto& prop : currentPreset.config)
+                    {
+                        cc.setProperty(prop.prop, prop.lvalue);
+                        if(prop.prop == tagCameraControlProperty::CameraControl_Zoom)
+                        {
+                            updateTbPos(prop.lvalue);
+                        }
+                    }
+
+                    txtPreset->color = {0, 0, 0, 255};
                 } else {
                     cc.setDevice(nullptr);
                     win->enableControls(false);
+                    txtPreset->color = {128, 128, 128, 255};
                 }
+                win->repaint(txtPreset->rect());
             }
         } 
     });
+
+    // win->setCallback(WM_PAINT, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+    // {
+    //     lm.update();
+    // });
 
     ShowWindow(win->hwnd, nCmdShow);
 
@@ -421,7 +478,7 @@ void createTrackbarLayout(win32w::LayoutManager& lm,
 
 void createRightLayout(win32w::LayoutManager& lm, 
     std::shared_ptr<win32w::GDIText> txtPreset,
-    std::shared_ptr<win32w::Control> cbPreset,
+    std::shared_ptr<win32w::Control> lbPreset,
     std::shared_ptr<win32w::GDIText> txtSave,
     std::shared_ptr<win32w::Control> editSave,
     std::shared_ptr<win32w::Control> btnSave
@@ -435,15 +492,16 @@ void createRightLayout(win32w::LayoutManager& lm,
     wlBtnSave->addChild(std::make_shared<win32w::ControlContainer>(btnSave));
 
     wlRight->orientation = win32w::WeightedDividerLayoutOrientation::VERTICAL;
-    wlRight->ratios = {1.0f, 1.0f, 1.0f, 1.0f, 2.0f, 4.0f};
+    // wlRight->ratios = {1.0f, 1.0f, 1.0f, 1.0f, 2.0f, 4.0f};
+    wlRight->ratios = {1.0f, 5.0f, 1.0f, 1.0f, 2.0f};
 
     wlRight->addChild(std::make_shared<win32w::LabelContainer>(txtPreset));
-    wlRight->addChild(std::make_shared<win32w::ControlContainer>(cbPreset));
+    wlRight->addChild(std::make_shared<win32w::ControlContainer>(lbPreset));
     wlRight->addChild(std::make_shared<win32w::LabelContainer>(txtSave));
     wlRight->addChild(std::make_shared<win32w::ControlContainer>(editSave));
     // wlRight->addChild(std::make_shared<win32w::ControlContainer>(btnSave));
     wlRight->addChild(wlBtnSave);
-    wlRight->addChild(std::make_shared<win32w::LayoutElement>());
+    // wlRight->addChild(std::make_shared<win32w::LayoutElement>());
 
     lm.root->addChild(wlRight);
 }

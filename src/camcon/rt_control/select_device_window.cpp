@@ -25,6 +25,7 @@ std::shared_ptr<win32w::Window> createWindow()
     return wb.build(win_title, CW_USEDEFAULT, CW_USEDEFAULT, camcon::W_WIDTH/2, camcon::W_HEIGHT/2, style);
 }
 
+const auto SELECT_DEV_WSTR { L"<Select a device>" };
 
 int promptDeviceIndexWindow()
 {
@@ -38,13 +39,26 @@ int promptDeviceIndexWindow()
     auto cbSelDev = cf.createComboBox(selWin, 20, 20, camcon::W_WIDTH/2 - 40, 160);
     auto btnSelDev = cf.createButton(selWin, L"Select", camcon::W_WIDTH/2 - 160 - 20, 60, 160, 32);
     
-
     cbSelDev->addItem(vde.getDeviceNames());
+    cbSelDev->setText(SELECT_DEV_WSTR);
+    
+    btnSelDev->setEnabled(false);
 
+    cbSelDev->setCallback(CBN_SELCHANGE, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+    {
+        auto currIdx = cbSelDev->getCurrentItemIndex();
+        if(currIdx == CB_ERR)
+        {
+            return;
+        }
+
+        btnSelDev->setEnabled(true);
+    });
 
     btnSelDev->setCallback(BN_CLICKED, [&](HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
-        auto currIdx = ComboBox_GetCurSel(cbSelDev->hwnd);
+        // auto currIdx = ComboBox_GetCurSel(cbSelDev->hwnd);
+        auto currIdx = cbSelDev->getCurrentItemIndex();
         if(currIdx == CB_ERR)
         {
             return;
@@ -65,6 +79,8 @@ int promptDeviceIndexWindow()
             vde.enumerateDevices();
 
             cbSelDev->addItem(vde.getDeviceNames());
+            cbSelDev->setText(SELECT_DEV_WSTR);
+            btnSelDev->setEnabled(false);
         } 
     });
 

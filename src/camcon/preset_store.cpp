@@ -5,6 +5,20 @@
 namespace camcon
 {
 
+void Preset::updateProperty(mfw::CameraControlPropertyValue p)
+{
+    for(auto& cp : config)
+    {
+        if(cp.prop == p.prop)
+        {
+            cp = p;
+            return;
+        }
+    }
+
+    config.emplace_back(p);
+}
+
 std::vector<Preset> PresetStore::loadPresets()
 {
     auto folder { root / L"presets" };

@@ -55,6 +55,12 @@ public:
 
     /// @brief Repaints the window
     void repaint();
+    
+    /// @brief Repaints the window
+    void repaint(RECT* rect);
+    
+    /// @brief Repaints the window
+    void repaint(RECT rect);
 
     RECT rect();
 };

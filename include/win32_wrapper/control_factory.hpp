@@ -63,6 +63,17 @@ public:
     /// @return A pointer to the created TrackBar
     std::shared_ptr<Control> createTrackBar(std::shared_ptr<Window> parent, std::wstring text, int x, int y, int width, int height, int min, int max,
         DWORD style = WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS | TBS_ENABLESELRANGE);
+
+    /// @brief Creates a Windows Controls' ListBox object for a Window.
+    /// @param parent Pointer to the Window object to be created
+    /// @param x x-position in pixels
+    /// @param y y-position in pixels
+    /// @param width width in pixels
+    /// @param height height in pixels
+    /// @param style ListBox style flags
+    /// @return A pointer to the created ListBox
+    std::shared_ptr<Control> createListBox(std::shared_ptr<Window> parent, int x, int y, int width, int height, 
+        DWORD style = WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | LBS_HASSTRINGS | LBS_NOTIFY);
 };
 
 }

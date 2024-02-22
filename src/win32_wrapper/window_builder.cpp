@@ -36,6 +36,8 @@ void WindowBuilder::createClass()
     wndClass.lpfnWndProc = eventCallback;
     // wndClass.lpfnWndProc = mockCallback;
     wndClass.hInstance = GetModuleHandle(nullptr);
+    // wndClass.hbrBackground = CreateSolidBrush(COLOR_WINDOW + 1);
+    wndClass.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     
     auto r = RegisterClass(&wndClass);
 }

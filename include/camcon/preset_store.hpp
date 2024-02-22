@@ -17,6 +17,8 @@ struct Preset
 {
     std::wstring name {L""};
     std::vector<mfw::CameraControlPropertyValue> config {};
+
+    void updateProperty(mfw::CameraControlPropertyValue p);
 };
 
 class PresetStore

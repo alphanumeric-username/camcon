@@ -43,13 +43,24 @@ void Window::enableControls(bool enable)
 {
     for(auto c : controlList_)
     {
-        EnableWindow(c->hwnd, enable);
+        // EnableWindow(c->hwnd, enable);
+        c->setEnabled(enable);
     }
 }
 
 void win32w::Window::repaint()
 {
-    InvalidateRect(hwnd, 0, TRUE);
+    repaint(nullptr);
+}
+
+void win32w::Window::repaint(RECT rect)
+{
+    repaint(&rect);
+}
+
+void win32w::Window::repaint(RECT* rect)
+{
+    InvalidateRect(hwnd, rect, TRUE);
 }
 
 

@@ -45,6 +45,7 @@ public:
     std::array<int, 4> color {0,0,0,255};
     
     void onPaint(HDC hdc);
+    RECT rect();
 };
 
 }

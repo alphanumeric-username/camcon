@@ -4,10 +4,15 @@
     - [x] Update device selection list upon device change;
 
 - v3.5:
-    - [ ] Save state;
+    - [x] Fix repaint bug;
+    - [x] Add string on device selection combobox text;
+    - [x] Fix no syntax error message;
+    - [x] Save state;
     - [ ] Add file watcher;
-    - [ ] Change combo box to list box;
-    - [ ] Create preset combo box manager;
+    - [x] Change combobox to listbox;
+
+- v3.5.1
+    - [ ] Create preset listbox manager;
     - [ ] Refactor code;
 
 - v3.6:
