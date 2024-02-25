@@ -372,13 +372,21 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
                             updateTbPos(prop.lvalue);
                         }
                     }
-
+                    txtPlus->color = {0, 0, 0, 255};
+                    txtMinus->color = {0, 0, 0, 255};
+                    txtSave->color = {0, 0, 0, 255};
                     txtPreset->color = {0, 0, 0, 255};
                 } else {
                     cc.setDevice(nullptr);
                     win->enableControls(false);
+                    txtPlus->color = {128, 128, 128, 255};
+                    txtMinus->color = {128, 128, 128, 255};
+                    txtSave->color = {128, 128, 128, 255};
                     txtPreset->color = {128, 128, 128, 255};
                 }
+                win->repaint(txtPlus->rect());
+                win->repaint(txtMinus->rect());
+                win->repaint(txtSave->rect());
                 win->repaint(txtPreset->rect());
             }
         } 

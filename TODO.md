@@ -8,14 +8,15 @@
     - [x] Add string on device selection combobox text;
     - [x] Fix no syntax error message;
     - [x] Save state;
-    - [ ] Add file watcher;
     - [x] Change combobox to listbox;
 
-- v3.5.1
+- v3.6:
+    - [ ] Add file watcher;
+    - [ ] CRUD operations;
     - [ ] Create preset listbox manager;
     - [ ] Refactor code;
 
-- v3.6:
+- v3.7:
     - [ ] Add icons;
     - [ ] Improve UI appearance;
     - [ ] Add README.md;
