@@ -76,12 +76,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     
     auto devIdx = args.index;
 
-    if(!args.syntaxIsValid)
-    {
-        return 1;
-    }
+    // if(!args.syntaxIsValid)
+    // {
+    //     return 1;
+    // }
 
-    if(!args.indexWasProvided && args.syntaxIsValid)
+    // if(!args.indexWasProvided && args.syntaxIsValid)
+    if(!args.indexWasProvided)
     {
         devIdx = camcon::promptDeviceIndexWindow();
         if(devIdx < 0)
@@ -421,12 +422,12 @@ camcon::arg_parse::RTControlArgs processArgs(PWSTR pCmdLine)
 
     auto args { camcon::arg_parse::parseRTControlArgs(argc, argv)};
 
-    if(!args.syntaxIsValid)
-    {
-        MessageBox(nullptr, L"Usage:\n\trt-control <device_index>", L"Syntax Error", MB_OK);
-        args.indexWasProvided = false;
-        return args;
-    }
+    // if(!args.syntaxIsValid)
+    // {
+    //     MessageBox(nullptr, L"Usage:\n\trt-control <device_index>", L"Syntax Error", MB_OK);
+    //     args.indexWasProvided = false;
+    //     return args;
+    // }
 
     return args;
 }

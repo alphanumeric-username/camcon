@@ -10,6 +10,9 @@
     - [x] Save state;
     - [x] Change combobox to listbox;
 
+- v3.5.1:
+    - [x] Fix argument parsing bug;
+
 - v3.6:
     - [ ] Add file watcher;
     - [ ] CRUD operations;

@@ -14,11 +14,9 @@ RTControlArgs parseRTControlArgs(int argc, wchar_t** argv)
     {
         args.index = std::stoi(argv[0]);
         args.indexWasProvided = true;
-    } else if (argc <= 1)
+    } else
     {
         args.indexWasProvided = false;
-    } else {
-        args.syntaxIsValid = false;
     }
 
     return args;
