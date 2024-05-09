@@ -18,6 +18,8 @@
     - [ ] CRUD operations;
     - [ ] Create preset listbox manager;
     - [ ] Refactor code;
+    - [ ] Add mask in preset name input;
+    - [ ] Press enter to save preset;
 
 - v3.7:
     - [ ] Add icons;
